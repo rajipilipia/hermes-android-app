@@ -1,0 +1,102 @@
+# Dependencies, local build products, and scratch data
+node_modules/
+.cache/
+build/
+dist/
+artifacts/
+# Build output only: upstream Desktop has a source folder app/artifacts that must be tracked.
+!vendor/**/artifacts/
+runtime/
+verification/
+coverage/
+*.log
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+
+# Credentials and signing material must never enter Git
+.env
+.env.*
+!.env.example
+*.private.json
+*.local.json
+auth.json
+*credentials*.json
+*secrets*.json
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pkcs12
+*.pem
+*.key
+*.p8
+*.der
+*.csr
+*.asc
+*.gpg
+*.truststore
+id_rsa*
+id_ed25519*
+*.env.local
+.npmrc
+.netrc
+.pypirc
+.git-credentials
+service-account*.json
+google-services.json
+*.tfvars
+# ADB and wireless-debugging identity (private key, pairing data)
+adbkey
+adbkey.pub
+.android/
+# Claude/Codex local settings and MCP configs can hold tokens
+.claude/settings.local.json
+.claude/*.local.*
+CLAUDE.local.md
+.mcp.json
+.codex/
+# PC adapter owner records, grants and service state (live runtime, never the repo)
+live-operation.json
+grants*.json
+windows-service/
+state.json
+state.json.lock
+service.json
+# Hermes and phone data: databases, logs, captures, dumps, screenshots, scratch
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.etl
+*.hprof
+*.dmp
+*.har
+*.pcap
+*.pcapng
+bugreport*.zip
+logcat*.txt
+*uidump*.xml
+*window_dump*.xml
+shot*.png
+screenshot*.png
+Screenshot_*.png
+scratch/
+tmp/
+.scratch/
+
+# Generated packages / native output
+*.apk
+*.aab
+*.apksig
+*.idsig
+*.dex
+*.class
+
+# Machine-local IDE and OS files
+local.properties
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

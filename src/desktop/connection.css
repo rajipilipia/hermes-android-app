@@ -1,0 +1,11 @@
+/* Android host: a phone cannot run a local Hermes backend. Hide that card in Settings → Gateways
+   (Hermes markup unchanged; applyConnectionConfig also rejects mode "local"). */
+#setting-field-gateway\.connection-mode .grid > button:first-child {
+  display: none;
+}
+
+/* First launch: Desktop's remote-setup "Back" returns to its local-install choice, which Android
+   does not have. */
+.hermes-android-setup .justify-between > button:first-child {
+  visibility: hidden;
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light by day, dark at night (values-night). Android WebView takes prefers-color-scheme from
+         the Activity theme (isLightTheme), so a dark-only theme kept the page dark in system light mode. -->
+    <color name="hermes_chrome">#F6F8FA</color>
+    <style name="Hermes.App" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/hermes_chrome</item>
+    </style>
+</resources>

@@ -1,0 +1,335 @@
+{
+  "sourceCommit": "93ac19694ea0c4cc1e1661ff37c2a171d96a1bc0",
+  "schemaVersion": 1,
+  "transport": "authenticated original /api/ws JSON-RPC",
+  "requestSchemas": {
+    "desktop.audio.config": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "profile"
+      ],
+      "additionalProperties": false
+    },
+    "desktop.upload.begin": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        },
+        "purpose": {
+          "type": "string",
+          "maxLength": 32,
+          "enum": [
+            "workspace",
+            "transcribe",
+            "file.attach",
+            "image.attach"
+          ]
+        },
+        "filename": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "mimeType": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "byteSize": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 26214400
+        },
+        "path": {
+          "type": "string",
+          "maxLength": 4096
+        },
+        "overwrite": {
+          "type": "boolean"
+        },
+        "sessionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "maxLength": 128
+        },
+        "storedSessionId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "profile",
+        "purpose",
+        "filename",
+        "mimeType",
+        "byteSize"
+      ],
+      "additionalProperties": false
+    },
+    "desktop.upload.append": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        },
+        "uploadId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 26214400
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 26214400
+        },
+        "dataBase64": {
+          "type": "string",
+          "maxLength": 87384
+        }
+      },
+      "required": [
+        "profile",
+        "uploadId",
+        "offset",
+        "sequence",
+        "dataBase64"
+      ],
+      "additionalProperties": false
+    },
+    "desktop.upload.complete": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        },
+        "uploadId": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "profile",
+        "uploadId"
+      ],
+      "additionalProperties": false
+    },
+    "desktop.upload.release": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        },
+        "uploadId": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "profile",
+        "uploadId"
+      ],
+      "additionalProperties": false
+    },
+    "desktop.download.read": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        },
+        "downloadId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 33554432
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      },
+      "required": [
+        "profile",
+        "downloadId",
+        "offset",
+        "length"
+      ],
+      "additionalProperties": false
+    },
+    "desktop.download.release": {
+      "type": "object",
+      "properties": {
+        "profile": {
+          "type": "string",
+          "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+          "maxLength": 64
+        },
+        "downloadId": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "required": [
+        "profile",
+        "downloadId"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "replyEnvelope": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "integer",
+        "minimum": 100,
+        "maximum": 599
+      },
+      "body": {}
+    },
+    "required": [
+      "status",
+      "body"
+    ],
+    "additionalProperties": false
+  },
+  "purposeFields": {
+    "workspace": [
+      "path",
+      "overwrite"
+    ],
+    "transcribe": [],
+    "file.attach": [
+      "sessionId",
+      "storedSessionId"
+    ],
+    "image.attach": [
+      "sessionId",
+      "storedSessionId"
+    ]
+  },
+  "purposePermission": {
+    "workspace": "files.write",
+    "transcribe": "audio",
+    "file.attach": "files.write",
+    "image.attach": "files.write"
+  },
+  "requireReadForUploadRpc": true,
+  "uploadLimits": {
+    "byteSize": 26214400,
+    "countIncludingPending": 4,
+    "aggregateDeclaredBytes": 52428800,
+    "chunkBytes": 65536,
+    "ttlSeconds": 60,
+    "maxChunks": 400,
+    "fullChunksExceptFinal": true
+  },
+  "resultFields": {
+    "begin": [
+      "uploadId",
+      "chunkBytes",
+      "expiresInSeconds"
+    ],
+    "append": [
+      "offset",
+      "sequence"
+    ],
+    "release": [
+      "released"
+    ],
+    "transcribe": [
+      "ok",
+      "transcript",
+      "provider"
+    ],
+    "workspace": [
+      "ok",
+      "entry",
+      "path",
+      "root",
+      "locked_root",
+      "can_change_path"
+    ],
+    "file.attach": [
+      "attached",
+      "name",
+      "path",
+      "ref_path",
+      "ref_text",
+      "uploaded"
+    ],
+    "image.attach": [
+      "attached",
+      "path",
+      "count",
+      "remainder",
+      "text",
+      "bytes",
+      "name",
+      "width?",
+      "height?",
+      "token_estimate?"
+    ],
+    "downloadDescriptor": [
+      "downloadId",
+      "byteSize",
+      "mimeType",
+      "chunkBytes",
+      "expiresInSeconds"
+    ],
+    "downloadChunk": [
+      "dataBase64",
+      "offset",
+      "byteSize",
+      "mimeType",
+      "eof"
+    ]
+  },
+  "audioConfig": {
+    "ok": true,
+    "stt": {
+      "mode": "relay",
+      "streaming": false
+    },
+    "tts": {
+      "mode": "relay",
+      "streaming": false
+    }
+  },
+  "completeResultPurpose": {
+    "workspace": "original managed-file DTO",
+    "transcribe": "original transcription DTO",
+    "file.attach": "original file.attach DTO",
+    "image.attach": "original image.attach_bytes DTO"
+  },
+  "ttsCall": {
+    "operation": "POST /api/audio/speak",
+    "output": "downloadDescriptor",
+    "provider": null
+  },
+  "lifecycle": "Exact principal/profile/socket owner. Fixed TTL, no refresh. Complete consumes once; never retry uncertain writes. Release cancels pending work but keeps quota/handles/barrier through original settlement. Disconnect, expiry and shutdown cancel; temp files close after settlement. Completed attachments/workspace files are durable.",
+  "credentials": "No URL, method, headers, identity, provider key, client-direct lease or bearer URL is accepted or returned."
+}

@@ -1,0 +1,18 @@
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+# Dependency notices are hashed byte-for-byte in vendor/third-party/manifest.json.
+# Eight upstream files use CRLF; do not normalize them or a fresh clone fails the build.
+vendor/third-party/_vscode_codicons-0.0.45/LICENSE -text
+vendor/third-party/_vscode_codicons-0.0.45/LICENSE-CODE -text
+vendor/third-party/color-name-1.1.4/LICENSE -text
+vendor/third-party/dnd-core-14.0.1/LICENSE -text
+vendor/third-party/react-dnd-14.0.5/LICENSE -text
+vendor/third-party/react-dnd-html5-backend-14.1.0/LICENSE -text
+vendor/third-party/tslib-2.8.1/LICENSE.txt -text
+vendor/third-party/typescript-6.0.3/LICENSE.txt -text
+
+# Preserve licensed source and notice bytes in fresh Git checkouts.
+vendor/** -text
+src/upstream/** -text

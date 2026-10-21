@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./vendor/hermes/apps/desktop/src/*"],
+      "@hermes/plugin-sdk": ["./vendor/hermes/apps/desktop/src/sdk/index.ts"],
+      "@hermes/shared/billing": [
+        "./vendor/hermes/apps/shared/src/billing-types.ts"
+      ],
+      "@hermes/shared/color": ["./vendor/hermes/apps/shared/src/color.ts"],
+      "@hermes/shared/*": ["./vendor/hermes/apps/shared/src/*"],
+      "@hermes/shared": ["./vendor/hermes/apps/shared/src/index.ts"]
+    }
+  },
+  "include": [
+    "src",
+    "tests",
+    "vendor/hermes/apps/desktop/src",
+    "vendor/hermes/apps/shared/src"
+  ],
+  "exclude": [
+    "vendor/**/*.test.ts",
+    "vendor/**/*.test.tsx",
+    "vendor/**/__tests__/**",
+    "vendor/**/test/**",
+    "vendor/hermes/apps/desktop/electron"
+  ]
+}
