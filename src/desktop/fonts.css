@@ -1,0 +1,40 @@
+/* Same theme font families as Desktop, bundled for offline Android use.
+   Fontsource packages contain the upstream OFL notices; see vendor/third-party. */
+@import "@fontsource/courier-prime/400.css";
+@import "@fontsource/courier-prime/700.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/700.css";
+
+/* Only Android authentication recovery, not a parallel application shell. */
+.hermes-android-signin {
+  position: fixed;
+  z-index: 2147483647;
+  inset: auto 1rem max(1rem, env(safe-area-inset-bottom));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem;
+  background: var(--ui-bg-primary, #f7f7f7);
+  color: var(--ui-text-primary, #1f2328);
+  border: 1px solid var(--ui-stroke-primary, #d0d7de);
+  box-shadow: var(--shadow-nous);
+  font:
+    14px system-ui,
+    sans-serif;
+}
+.hermes-android-account {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+.hermes-android-signin button,
+.hermes-android-account button {
+  min-height: 44px;
+  padding: 0.5rem 1rem;
+  background: var(--ui-accent, #0053fd);
+  color: var(--ui-text-on-accent, white);
+  border-radius: 4px;
+}

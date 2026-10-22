@@ -1,0 +1,158 @@
+/* Single-screen Android only. No rule applies to an unfolded Fold/tablet.
+   Keep the existing renderer, features, stored layout, theme and text scale. */
+html[data-android-compact] {
+  --android-edge: 8px;
+}
+html[data-android-compact] [data-slot="composer-dock"]:not([data-popped-out]) {
+  width: calc(100% - 16px) !important;
+  max-width: calc(100% - 16px) !important;
+}
+html[data-android-compact] form[data-slot="composer-root"] {
+  --composer-control-gap: 4px;
+  --composer-control-size: 40px;
+}
+/* Text gets its own full-width row. Controls do not steal its typing space. */
+html[data-android-compact] form[data-slot="composer-root"] .grid:has(> [class*="grid-area:input"]) {
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  grid-template-areas: "input input" "menu controls" !important;
+  column-gap: 4px !important;
+  row-gap: 6px !important;
+}
+html[data-android-compact] [data-slot="composer-rich-input"] {
+  max-height: min(160px, calc(var(--android-visible-height, 100dvh) * .28)) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
+}
+html[data-android-compact] [class*="grid-area:controls"] > div:last-child {
+  width: 100%;
+  min-width: 0;
+}
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label^="Model"] {
+  flex: 1 1 0;
+  min-width: 40px;
+  max-width: 100%;
+  padding-inline: 4px;
+}
+html[data-android-compact] [data-testid="reasoning-pill"] {
+  min-height: 40px;
+  flex-shrink: 0;
+  padding-inline: 4px;
+}
+/* Actual non-overlapping targets: the old expanded pseudo-hitboxes could cover
+   a neighboring pill. The native selection bar is never styled or replaced. */
+html[data-android-compact] form[data-slot="composer-root"] button::after {
+  inset: 0 !important;
+}
+html[data-android-compact] [data-slot="dropdown-menu-content"],
+html[data-android-compact] [data-slot="dropdown-menu-sub-content"],
+html[data-android-compact] [data-slot="popover-content"],
+html[data-android-compact] [data-slot="select-content"] {
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: min(var(--radix-popper-available-height, 100dvh), calc(var(--android-visible-height, 100dvh) - 16px)) !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+html[data-android-compact] :is([role="menuitem"], [role="menuitemradio"], [role="menuitemcheckbox"], [role="option"]) {
+  min-height: 40px;
+}
+html[data-android-compact] [data-slot="dialog-content"] {
+  min-width: 0 !important;
+  max-width: calc(100vw - 16px) !important;
+  max-height: calc(var(--android-visible-height, 100dvh) - 16px) !important;
+}
+html[data-android-compact] [data-overlay-surface] {
+  min-width: 0;
+  padding-inline: 8px !important;
+}
+html[data-android-compact] [data-narrow-overlay] {
+  max-width: calc(100vw - 16px) !important;
+}
+html[data-android-compact] [data-zone-tabstrip] {
+  min-width: 0;
+}
+html[data-android-compact] [data-zone-tabstrip] button[aria-label="New session tab"] {
+  min-width: 32px;
+  min-height: 32px;
+  flex-shrink: 0;
+}
+html[data-android-compact] footer[data-slot="statusbar"] {
+  min-width: 0;
+  overflow: hidden;
+  gap: 4px;
+  padding-left: max(4px, env(safe-area-inset-left));
+  padding-right: max(4px, env(safe-area-inset-right));
+}
+/* Expanded touch pseudo-elements caused a vertical scrollbar inside the footer.
+   Their real controls stay intact; no rule applies to an unfolded Fold. */
+html[data-android-compact] footer[data-slot="statusbar"] button::after {
+  inset: 0 !important;
+}
+html[data-android-compact] [data-android-statusbar-cluster="left"] {
+  flex: 1 1 0;
+  min-width: 0;
+}
+html[data-android-compact] [data-android-statusbar-cluster="right"] {
+  flex: 0 0 auto;
+  overflow: visible;
+}
+html[data-android-compact] [data-android-statusbar-item="command-center"],
+html[data-android-compact] [data-android-statusbar-item="approval-mode"] {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+html[data-android-compact] [data-android-statusbar-item="workspace-cwd"] {
+  flex: 0 1000 auto;
+  min-width: 26px;
+  overflow: hidden;
+}
+html[data-android-compact] [data-android-statusbar-item="gateway-health"] {
+  flex: 0 1 auto;
+  min-width: 26px;
+  overflow: hidden;
+}
+html[data-android-compact] [data-android-statusbar-item] > svg {
+  flex-shrink: 0;
+}
+html[data-android-compact] footer [data-slot="profile-switcher"] {
+  flex: 0 0.001 auto;
+  width: auto;
+  min-width: min-content;
+  max-width: 10rem;
+}
+html[data-android-compact] [data-android-profile-prefix] {
+  display: grid;
+  min-width: min-content;
+}
+html[data-android-compact] [data-android-profile-prefix]::before {
+  content: attr(data-android-profile-prefix);
+  visibility: hidden;
+  grid-area: 1 / 1;
+  white-space: pre;
+}
+html[data-android-compact] [data-android-profile-prefix] > span {
+  grid-area: 1 / 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Content scrolls inside its own surface instead of widening the app. */
+html[data-android-compact] [data-chat-surface] :is(pre, table) {
+  max-width: 100%;
+}
+html[data-android-compact] [data-chat-surface] pre {
+  overflow-x: auto;
+}
+html[data-android-compact] [data-chat-surface] img {
+  max-width: 100%;
+  height: auto;
+}
+/* Landscape phones retain the same entry points; reduce surrounding padding,
+   not the user's font or the unfolded Fold's layout. */
+@media (orientation: landscape) {
+  html[data-android-compact] [data-slot="composer-rich-input"] {
+    max-height: min(96px, calc(var(--android-visible-height, 100dvh) * .25)) !important;
+  }
+}

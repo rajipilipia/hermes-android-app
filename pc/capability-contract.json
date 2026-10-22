@@ -1,0 +1,3509 @@
+{
+  "schemaVersion": 2,
+  "profileSchema": {
+    "type": "string",
+    "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+    "maxLength": 64
+  },
+  "withheldOperations": [
+    "DELETE /api/learning/node",
+    "GET /api/git/file-diff",
+    "GET /api/git/review/commit-context",
+    "GET /api/git/review/diff",
+    "GET /api/git/review/list",
+    "GET /api/git/status",
+    "POST /api/audio/stt-lease",
+    "POST /api/audio/tts-lease",
+    "POST /api/files/mkdir",
+    "PUT /api/learning/node",
+    "PUT /api/skills/toggle"
+  ],
+  "sourceCommit": "93ac19694ea0c4cc1e1661ff37c2a171d96a1bc0",
+  "transport": "authenticated upstream /api/ws JSON-RPC",
+  "rpcMethod": "desktop.call",
+  "requiredFields": [
+    "operation",
+    "profile"
+  ],
+  "requestFields": [
+    "operation",
+    "profile",
+    "pathParams",
+    "query",
+    "body"
+  ],
+  "requestAdditionalProperties": false,
+  "reply": {
+    "status": "integer HTTP status",
+    "body": "JSON value"
+  },
+  "limits": {
+    "requestBytes": 4194304,
+    "jsonResponseBytes": 4194304,
+    "downloadBytes": 33554432,
+    "downloadCount": 8,
+    "downloadChunkBytes": 65536,
+    "downloadTtlSeconds": 60,
+    "concurrency": 8
+  },
+  "ownership": {
+    "principal": "server-verified WSTransport.auth_identity; caller identity/headers forbidden",
+    "connection": "server-generated transport identity; no caller-controlled connectionId",
+    "profile": "required canonical name authorized by host Policy; no current/all aliases",
+    "storedSession": "exact detail/messages/PATCH/timeline/around: complete connected-component ownership and service share one snapshot/write transaction. Lists/search/sidebar source-filter original SQL before aggregation/limits; all selects only explicit readable principal grants, never upstream raw all; no shared row cache or NULL-owner repair. Session-file forwarding remains withheld",
+    "workspace": "host-local Windows pinned handles through I/O, final resolved sensitive checks, atomic write-text; SSH file semantics and opaque Git aggregate/content operations withheld"
+  },
+  "downloads": {
+    "readMethod": "desktop.download.read",
+    "releaseMethod": "desktop.download.release",
+    "readParams": {
+      "profile": "string",
+      "downloadId": "opaque string",
+      "offset": "integer >=0",
+      "length": "integer 1..65536"
+    },
+    "releaseParams": {
+      "profile": "string",
+      "downloadId": "opaque string"
+    },
+    "descriptorFields": [
+      "downloadId",
+      "byteSize",
+      "mimeType",
+      "chunkBytes",
+      "expiresInSeconds"
+    ],
+    "chunkFields": [
+      "dataBase64",
+      "offset",
+      "byteSize",
+      "mimeType",
+      "eof"
+    ]
+  },
+  "binaryRpc": {
+    "schemaVersion": 1,
+    "transport": "authenticated original /api/ws JSON-RPC",
+    "requestSchemas": {
+      "desktop.audio.config": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          }
+        },
+        "required": [
+          "profile"
+        ],
+        "additionalProperties": false
+      },
+      "desktop.upload.begin": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "purpose": {
+            "type": "string",
+            "maxLength": 32,
+            "enum": [
+              "workspace",
+              "transcribe",
+              "file.attach",
+              "image.attach"
+            ]
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "mimeType": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "byteSize": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 26214400
+          },
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "overwrite": {
+            "type": "boolean"
+          },
+          "sessionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          },
+          "storedSessionId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "profile",
+          "purpose",
+          "filename",
+          "mimeType",
+          "byteSize"
+        ],
+        "additionalProperties": false
+      },
+      "desktop.upload.append": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "uploadId": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 26214400
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 26214400
+          },
+          "dataBase64": {
+            "type": "string",
+            "maxLength": 87384
+          }
+        },
+        "required": [
+          "profile",
+          "uploadId",
+          "offset",
+          "sequence",
+          "dataBase64"
+        ],
+        "additionalProperties": false
+      },
+      "desktop.upload.complete": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "uploadId": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "profile",
+          "uploadId"
+        ],
+        "additionalProperties": false
+      },
+      "desktop.upload.release": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "uploadId": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "profile",
+          "uploadId"
+        ],
+        "additionalProperties": false
+      },
+      "desktop.download.read": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "downloadId": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 33554432
+          },
+          "length": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 65536
+          }
+        },
+        "required": [
+          "profile",
+          "downloadId",
+          "offset",
+          "length"
+        ],
+        "additionalProperties": false
+      },
+      "desktop.download.release": {
+        "type": "object",
+        "properties": {
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
+          },
+          "downloadId": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "profile",
+          "downloadId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "replyEnvelope": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "integer",
+          "minimum": 100,
+          "maximum": 599
+        },
+        "body": {}
+      },
+      "required": [
+        "status",
+        "body"
+      ],
+      "additionalProperties": false
+    },
+    "purposeFields": {
+      "workspace": [
+        "path",
+        "overwrite"
+      ],
+      "transcribe": [],
+      "file.attach": [
+        "sessionId",
+        "storedSessionId"
+      ],
+      "image.attach": [
+        "sessionId",
+        "storedSessionId"
+      ]
+    },
+    "purposePermission": {
+      "workspace": "files.write",
+      "transcribe": "audio",
+      "file.attach": "files.write",
+      "image.attach": "files.write"
+    },
+    "requireReadForUploadRpc": true,
+    "uploadLimits": {
+      "byteSize": 26214400,
+      "countIncludingPending": 4,
+      "aggregateDeclaredBytes": 52428800,
+      "chunkBytes": 65536,
+      "ttlSeconds": 60,
+      "maxChunks": 400,
+      "fullChunksExceptFinal": true
+    },
+    "resultFields": {
+      "begin": [
+        "uploadId",
+        "chunkBytes",
+        "expiresInSeconds"
+      ],
+      "append": [
+        "offset",
+        "sequence"
+      ],
+      "release": [
+        "released"
+      ],
+      "transcribe": [
+        "ok",
+        "transcript",
+        "provider"
+      ],
+      "workspace": [
+        "ok",
+        "entry",
+        "path",
+        "root",
+        "locked_root",
+        "can_change_path"
+      ],
+      "file.attach": [
+        "attached",
+        "name",
+        "path",
+        "ref_path",
+        "ref_text",
+        "uploaded"
+      ],
+      "image.attach": [
+        "attached",
+        "path",
+        "count",
+        "remainder",
+        "text",
+        "bytes",
+        "name",
+        "width?",
+        "height?",
+        "token_estimate?"
+      ],
+      "downloadDescriptor": [
+        "downloadId",
+        "byteSize",
+        "mimeType",
+        "chunkBytes",
+        "expiresInSeconds"
+      ],
+      "downloadChunk": [
+        "dataBase64",
+        "offset",
+        "byteSize",
+        "mimeType",
+        "eof"
+      ]
+    },
+    "audioConfig": {
+      "ok": true,
+      "stt": {
+        "mode": "relay",
+        "streaming": false
+      },
+      "tts": {
+        "mode": "relay",
+        "streaming": false
+      }
+    },
+    "completeResultPurpose": {
+      "workspace": "original managed-file DTO",
+      "transcribe": "original transcription DTO",
+      "file.attach": "original file.attach DTO",
+      "image.attach": "original image.attach_bytes DTO"
+    },
+    "ttsCall": {
+      "operation": "POST /api/audio/speak",
+      "output": "downloadDescriptor",
+      "provider": null
+    },
+    "lifecycle": "Exact principal/profile/socket owner. Fixed TTL, no refresh. Complete consumes once; never retry uncertain writes. Release cancels pending work but keeps quota/handles/barrier through original settlement. Disconnect, expiry and shutdown cancel; temp files close after settlement. Completed attachments/workspace files are durable.",
+    "credentials": "No URL, method, headers, identity, provider key, client-direct lease or bearer URL is accepted or returned."
+  },
+  "operationCount": 69,
+  "operations": [
+    {
+      "id": "GET /api/profiles",
+      "method": "GET",
+      "pathTemplate": "/api/profiles",
+      "source": "hermes_cli/web_routers/profiles.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [],
+      "resultProjection": "profiles",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_profiles_endpoint",
+      "sourceLines": [
+        807,
+        808
+      ]
+    },
+    {
+      "id": "GET /api/profiles/active",
+      "method": "GET",
+      "pathTemplate": "/api/profiles/active",
+      "source": "hermes_cli/web_routers/profiles.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_active_profile_endpoint",
+      "sourceLines": [
+        885,
+        902
+      ]
+    },
+    {
+      "id": "GET /api/status",
+      "method": "GET",
+      "pathTemplate": "/api/status",
+      "source": "hermes_cli/web_routers/status.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_status",
+      "sourceLines": [
+        467,
+        566
+      ]
+    },
+    {
+      "id": "GET /api/config",
+      "method": "GET",
+      "pathTemplate": "/api/config",
+      "source": "hermes_cli/web_routers/config_env.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "settings",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "include_defaults": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_config",
+      "sourceLines": [
+        81,
+        91
+      ]
+    },
+    {
+      "id": "GET /api/config/defaults",
+      "method": "GET",
+      "pathTemplate": "/api/config/defaults",
+      "source": "hermes_cli/web_routers/config_env.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_defaults",
+      "sourceLines": [
+        95,
+        96
+      ]
+    },
+    {
+      "id": "GET /api/config/schema",
+      "method": "GET",
+      "pathTemplate": "/api/config/schema",
+      "source": "hermes_cli/web_routers/config_env.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_schema",
+      "sourceLines": [
+        100,
+        106
+      ]
+    },
+    {
+      "id": "GET /api/env",
+      "method": "GET",
+      "pathTemplate": "/api/env",
+      "source": "hermes_cli/web_routers/config_env.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_env_vars",
+      "sourceLines": [
+        260,
+        263
+      ]
+    },
+    {
+      "id": "GET /api/fs/default-cwd",
+      "method": "GET",
+      "pathTemplate": "/api/fs/default-cwd",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "fs_default_cwd",
+      "sourceLines": [
+        982,
+        992
+      ]
+    },
+    {
+      "id": "GET /api/model/options",
+      "method": "GET",
+      "pathTemplate": "/api/model/options",
+      "source": "hermes_cli/web_routers/models.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "startup",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "explicit_only": {
+            "type": "boolean"
+          },
+          "include_unconfigured": {
+            "type": "boolean"
+          },
+          "refresh": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_model_options",
+      "sourceLines": [
+        139,
+        168
+      ]
+    },
+    {
+      "id": "PUT /api/config",
+      "method": "PUT",
+      "pathTemplate": "/api/config",
+      "source": "hermes_cli/web_routers/config_env.py",
+      "permission": "settings.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "type": "object",
+            "properties": {
+              "display": {
+                "type": "object",
+                "properties": {
+                  "skin": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "theme": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "language": {
+                    "type": "string",
+                    "maxLength": 32
+                  },
+                  "show_reasoning": {
+                    "type": "boolean"
+                  },
+                  "show_cost": {
+                    "type": "boolean"
+                  },
+                  "compact": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "agent": {
+                "type": "object",
+                "properties": {
+                  "max_turns": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "compression": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "voice": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "stt": {
+                "type": "object",
+                "properties": {
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "provider": {
+                    "type": "string",
+                    "maxLength": 64
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "tts": {
+                "type": "object",
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "maxLength": 64
+                  },
+                  "voice": {
+                    "type": "string",
+                    "maxLength": 256
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "update_config",
+      "sourceLines": [
+        118,
+        156
+      ]
+    },
+    {
+      "id": "GET /api/fs/list",
+      "method": "GET",
+      "pathTemplate": "/api/fs/list",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "files",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "fs_list",
+      "sourceLines": [
+        763,
+        789
+      ]
+    },
+    {
+      "id": "GET /api/fs/read-text",
+      "method": "GET",
+      "pathTemplate": "/api/fs/read-text",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "fs_read_text",
+      "sourceLines": [
+        793,
+        831
+      ]
+    },
+    {
+      "id": "GET /api/fs/read-data-url",
+      "method": "GET",
+      "pathTemplate": "/api/fs/read-data-url",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [
+        "session_id-bound file reads are explicitly withheld"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "fs_read_data_url",
+      "sourceLines": [
+        908,
+        930
+      ]
+    },
+    {
+      "id": "GET /api/fs/git-root",
+      "method": "GET",
+      "pathTemplate": "/api/fs/git-root",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "fs_git_root",
+      "sourceLines": [
+        965,
+        978
+      ]
+    },
+    {
+      "id": "GET /api/fs/download",
+      "method": "GET",
+      "pathTemplate": "/api/fs/download",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "read",
+      "output": "download",
+      "profileQuery": true,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [
+        "session_id-bound file reads are explicitly withheld"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "fs_download",
+      "sourceLines": [
+        934,
+        961
+      ]
+    },
+    {
+      "id": "POST /api/fs/write-text",
+      "method": "POST",
+      "pathTemplate": "/api/fs/write-text",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "files.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [
+        "body.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 1048576
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "fs_write_text",
+      "sourceLines": [
+        835,
+        888
+      ]
+    },
+    {
+      "id": "POST /api/files/mkdir",
+      "method": "POST",
+      "pathTemplate": "/api/files/mkdir",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "files.write",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "body.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "create_managed_directory",
+      "sourceLines": [
+        722,
+        728
+      ]
+    },
+    {
+      "id": "POST /api/files/upload",
+      "method": "POST",
+      "pathTemplate": "/api/files/upload",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "files.write",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "body.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "data_url": {
+            "type": "string",
+            "maxLength": 3145728
+          },
+          "overwrite": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "path",
+          "data_url"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "upload_managed_file",
+      "sourceLines": [
+        647,
+        653
+      ]
+    },
+    {
+      "id": "GET /api/sessions",
+      "method": "GET",
+      "pathTemplate": "/api/sessions",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "min_messages": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 500
+          },
+          "archived": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": [
+              "exclude",
+              "only",
+              "include"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": [
+              "created",
+              "recent"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "sources": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "exclude_sources": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_sessions",
+      "sourceLines": [
+        178,
+        271
+      ]
+    },
+    {
+      "id": "GET /api/sessions/search",
+      "method": "GET",
+      "pathTemplate": "/api/sessions/search",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 1024
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "sources": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "exclude_sources": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "search_sessions",
+      "sourceLines": [
+        285,
+        461
+      ]
+    },
+    {
+      "id": "GET /api/sessions/{session_id}",
+      "method": "GET",
+      "pathTemplate": "/api/sessions/{session_id}",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_session_detail",
+      "sourceLines": [
+        563,
+        582
+      ]
+    },
+    {
+      "id": "GET /api/sessions/{session_id}/messages",
+      "method": "GET",
+      "pathTemplate": "/api/sessions/{session_id}/messages",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "order": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": [
+              "latest",
+              "oldest"
+            ]
+          },
+          "include_compacted": {
+            "type": "boolean"
+          },
+          "inline_images": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_session_messages",
+      "sourceLines": [
+        724,
+        767
+      ]
+    },
+    {
+      "id": "GET /api/sessions/{session_id}/timeline",
+      "method": "GET",
+      "pathTemplate": "/api/sessions/{session_id}/timeline",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "after_row_id": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_session_timeline",
+      "sourceLines": [
+        786,
+        804
+      ]
+    },
+    {
+      "id": "GET /api/sessions/{session_id}/messages/around",
+      "method": "GET",
+      "pathTemplate": "/api/sessions/{session_id}/messages/around",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120
+          },
+          "row_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "row_id"
+        ],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_session_messages_around",
+      "sourceLines": [
+        808,
+        827
+      ]
+    },
+    {
+      "id": "PATCH /api/sessions/{session_id}",
+      "method": "PATCH",
+      "pathTemplate": "/api/sessions/{session_id}",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "sessions.write",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "hidden": {
+            "type": "boolean"
+          },
+          "pinned": {
+            "type": "boolean"
+          },
+          "unread": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "sourceHandler": "rename_session_endpoint",
+      "sourceLines": [
+        893,
+        922
+      ]
+    },
+    {
+      "id": "GET /api/profiles/sessions",
+      "method": "GET",
+      "pathTemplate": "/api/profiles/sessions",
+      "source": "hermes_cli/web_routers/profiles.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "min_messages": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 500
+          },
+          "archived": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": [
+              "exclude",
+              "only",
+              "include"
+            ]
+          },
+          "order": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": [
+              "created",
+              "recent"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "sources": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "exclude_sources": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "profile": {
+            "type": "string",
+            "pattern": "^(?:all|(?!(?:current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63})$",
+            "maxLength": 64
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_profiles_sessions",
+      "sourceLines": [
+        454,
+        511
+      ]
+    },
+    {
+      "id": "GET /api/profiles/sessions/sidebar",
+      "method": "GET",
+      "pathTemplate": "/api/profiles/sessions/sidebar",
+      "source": "hermes_cli/web_routers/profiles.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "recents_profile": {
+            "type": "string",
+            "pattern": "^(?:all|(?!(?:current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63})$",
+            "maxLength": 64
+          },
+          "recents_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "recents_exclude": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "cron_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "messaging_limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 500
+          },
+          "messaging_exclude": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_profiles_sessions_sidebar",
+      "sourceLines": [
+        516,
+        654
+      ]
+    },
+    {
+      "id": "POST /api/audio/transcribe",
+      "method": "POST",
+      "pathTemplate": "/api/audio/transcribe",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "data_url": {
+            "type": "string",
+            "maxLength": 3145728
+          },
+          "mime_type": {
+            "type": "string",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "data_url"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "transcribe_audio_upload",
+      "sourceLines": [
+        84,
+        143
+      ]
+    },
+    {
+      "id": "POST /api/audio/speak",
+      "method": "POST",
+      "pathTemplate": "/api/audio/speak",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "download",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 20000
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "speak_text",
+      "sourceLines": [
+        293,
+        346
+      ]
+    },
+    {
+      "id": "POST /api/audio/stt-lease",
+      "method": "POST",
+      "pathTemplate": "/api/audio/stt-lease",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "lease": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lease",
+          "active"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "stt_lease",
+      "sourceLines": [
+        482,
+        512
+      ]
+    },
+    {
+      "id": "POST /api/audio/tts-lease",
+      "method": "POST",
+      "pathTemplate": "/api/audio/tts-lease",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "lease": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          },
+          "active": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "lease",
+          "active"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "tts_lease",
+      "sourceLines": [
+        350,
+        384
+      ]
+    },
+    {
+      "id": "GET /api/audio/elevenlabs/voices",
+      "method": "GET",
+      "pathTemplate": "/api/audio/elevenlabs/voices",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_elevenlabs_voices",
+      "sourceLines": [
+        216,
+        289
+      ]
+    },
+    {
+      "id": "GET /api/audio/voice-live/status",
+      "method": "GET",
+      "pathTemplate": "/api/audio/voice-live/status",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_voice_live_status",
+      "sourceLines": [
+        176,
+        182
+      ]
+    },
+    {
+      "id": "GET /api/skills",
+      "method": "GET",
+      "pathTemplate": "/api/skills",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_skills",
+      "sourceLines": [
+        344,
+        376
+      ]
+    },
+    {
+      "id": "GET /api/skills/content",
+      "method": "GET",
+      "pathTemplate": "/api/skills/content",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_skill_content",
+      "sourceLines": [
+        398,
+        415
+      ]
+    },
+    {
+      "id": "PUT /api/skills/toggle",
+      "method": "PUT",
+      "pathTemplate": "/api/skills/toggle",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "skills.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "toggle_skill",
+      "sourceLines": [
+        380,
+        394
+      ]
+    },
+    {
+      "id": "GET /api/skills/hub/official",
+      "method": "GET",
+      "pathTemplate": "/api/skills/hub/official",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "network",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_official_skills",
+      "sourceLines": [
+        124,
+        144
+      ]
+    },
+    {
+      "id": "GET /api/skills/hub/sources",
+      "method": "GET",
+      "pathTemplate": "/api/skills/hub/sources",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "network",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_skills_hub_sources",
+      "sourceLines": [
+        148,
+        182
+      ]
+    },
+    {
+      "id": "GET /api/skills/hub/search",
+      "method": "GET",
+      "pathTemplate": "/api/skills/hub/search",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "network",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "q": {
+            "type": "string",
+            "maxLength": 512
+          },
+          "source": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "search_skills_hub",
+      "sourceLines": [
+        186,
+        215
+      ]
+    },
+    {
+      "id": "GET /api/skills/hub/preview",
+      "method": "GET",
+      "pathTemplate": "/api/skills/hub/preview",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "network",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "preview_skill_hub",
+      "sourceLines": [
+        228,
+        262
+      ]
+    },
+    {
+      "id": "GET /api/skills/hub/scan",
+      "method": "GET",
+      "pathTemplate": "/api/skills/hub/scan",
+      "source": "hermes_cli/web_routers/skills.py",
+      "permission": "network",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "maxLength": 512
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "scan_skill_hub",
+      "sourceLines": [
+        266,
+        340
+      ]
+    },
+    {
+      "id": "GET /api/mcp/servers",
+      "method": "GET",
+      "pathTemplate": "/api/mcp/servers",
+      "source": "hermes_cli/web_routers/mcp.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "mcp",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_mcp_servers",
+      "sourceLines": [
+        95,
+        107
+      ]
+    },
+    {
+      "id": "GET /api/mcp/catalog",
+      "method": "GET",
+      "pathTemplate": "/api/mcp/catalog",
+      "source": "hermes_cli/web_routers/mcp.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "mcp-catalog",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_mcp_catalog",
+      "sourceLines": [
+        440,
+        468
+      ]
+    },
+    {
+      "id": "PUT /api/mcp/servers/{name}/enabled",
+      "method": "PUT",
+      "pathTemplate": "/api/mcp/servers/{name}/enabled",
+      "source": "hermes_cli/web_routers/mcp.py",
+      "permission": "mcp.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "set_mcp_server_enabled",
+      "sourceLines": [
+        373,
+        395
+      ]
+    },
+    {
+      "id": "GET /api/tools/toolsets",
+      "method": "GET",
+      "pathTemplate": "/api/tools/toolsets",
+      "source": "hermes_cli/web_routers/tools.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "toolsets",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_toolsets",
+      "sourceLines": [
+        231,
+        277
+      ]
+    },
+    {
+      "id": "PUT /api/tools/toolsets/{name}",
+      "method": "PUT",
+      "pathTemplate": "/api/tools/toolsets/{name}",
+      "source": "hermes_cli/web_routers/tools.py",
+      "permission": "tools.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "toggle_toolset",
+      "sourceLines": [
+        281,
+        342
+      ]
+    },
+    {
+      "id": "GET /api/tools/toolsets/{name}/config",
+      "method": "GET",
+      "pathTemplate": "/api/tools/toolsets/{name}/config",
+      "source": "hermes_cli/web_routers/tools.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "tool-config",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_toolset_config",
+      "sourceLines": [
+        346,
+        429
+      ]
+    },
+    {
+      "id": "GET /api/tools/toolsets/{name}/models",
+      "method": "GET",
+      "pathTemplate": "/api/tools/toolsets/{name}/models",
+      "source": "hermes_cli/web_routers/tools.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "tool-models",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_toolset_models",
+      "sourceLines": [
+        433,
+        469
+      ]
+    },
+    {
+      "id": "GET /api/tools/terminal/backends",
+      "method": "GET",
+      "pathTemplate": "/api/tools/terminal/backends",
+      "source": "hermes_cli/web_routers/tools.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "terminal-backends",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_terminal_backends",
+      "sourceLines": [
+        651,
+        674
+      ]
+    },
+    {
+      "id": "GET /api/learning/graph",
+      "method": "GET",
+      "pathTemplate": "/api/learning/graph",
+      "source": "hermes_cli/web_routers/status.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_learning_graph",
+      "sourceLines": [
+        678,
+        692
+      ]
+    },
+    {
+      "id": "GET /api/learning/node",
+      "method": "GET",
+      "pathTemplate": "/api/learning/node",
+      "source": "hermes_cli/web_routers/status.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_learning_node",
+      "sourceLines": [
+        705,
+        708
+      ]
+    },
+    {
+      "id": "PUT /api/learning/node",
+      "method": "PUT",
+      "pathTemplate": "/api/learning/node",
+      "source": "hermes_cli/web_routers/status.py",
+      "permission": "skills.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 200000
+          }
+        },
+        "required": [
+          "id",
+          "content"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "update_learning_node",
+      "sourceLines": [
+        723,
+        727
+      ]
+    },
+    {
+      "id": "DELETE /api/learning/node",
+      "method": "DELETE",
+      "pathTemplate": "/api/learning/node",
+      "source": "hermes_cli/web_routers/status.py",
+      "permission": "skills.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "delete_learning_node",
+      "sourceLines": [
+        712,
+        719
+      ]
+    },
+    {
+      "id": "GET /api/cron/jobs",
+      "method": "GET",
+      "pathTemplate": "/api/cron/jobs",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_cron_jobs",
+      "sourceLines": [
+        669,
+        670
+      ]
+    },
+    {
+      "id": "GET /api/cron/jobs/{job_id}",
+      "method": "GET",
+      "pathTemplate": "/api/cron/jobs/{job_id}",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_cron_job",
+      "sourceLines": [
+        674,
+        675
+      ]
+    },
+    {
+      "id": "GET /api/cron/jobs/{job_id}/runs",
+      "method": "GET",
+      "pathTemplate": "/api/cron/jobs/{job_id}/runs",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_cron_job_runs",
+      "sourceLines": [
+        679,
+        680
+      ]
+    },
+    {
+      "id": "GET /api/cron/blueprints",
+      "method": "GET",
+      "pathTemplate": "/api/cron/blueprints",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "list_cron_blueprints",
+      "sourceLines": [
+        859,
+        867
+      ]
+    },
+    {
+      "id": "GET /api/model/info",
+      "method": "GET",
+      "pathTemplate": "/api/model/info",
+      "source": "hermes_cli/web_routers/models.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "model-info",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_model_info",
+      "sourceLines": [
+        91,
+        135
+      ]
+    },
+    {
+      "id": "GET /api/model/auxiliary",
+      "method": "GET",
+      "pathTemplate": "/api/model/auxiliary",
+      "source": "hermes_cli/web_routers/models.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "model-auxiliary",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_auxiliary_models",
+      "sourceLines": [
+        220,
+        269
+      ]
+    },
+    {
+      "id": "GET /api/model/moa",
+      "method": "GET",
+      "pathTemplate": "/api/model/moa",
+      "source": "hermes_cli/web_routers/models.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "model-moa",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_moa_models",
+      "sourceLines": [
+        273,
+        280
+      ]
+    },
+    {
+      "id": "GET /api/git/status",
+      "method": "GET",
+      "pathTemplate": "/api/git/status",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_status_route",
+      "sourceLines": [
+        51,
+        52
+      ]
+    },
+    {
+      "id": "GET /api/git/worktrees",
+      "method": "GET",
+      "pathTemplate": "/api/git/worktrees",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_worktrees_route",
+      "sourceLines": [
+        111,
+        112
+      ]
+    },
+    {
+      "id": "GET /api/git/branches",
+      "method": "GET",
+      "pathTemplate": "/api/git/branches",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_branches_route",
+      "sourceLines": [
+        116,
+        117
+      ]
+    },
+    {
+      "id": "GET /api/git/base-branches",
+      "method": "GET",
+      "pathTemplate": "/api/git/base-branches",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_base_branches_route",
+      "sourceLines": [
+        121,
+        122
+      ]
+    },
+    {
+      "id": "GET /api/git/review/commit-context",
+      "method": "GET",
+      "pathTemplate": "/api/git/review/commit-context",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_commit_context_route",
+      "sourceLines": [
+        150,
+        154
+      ]
+    },
+    {
+      "id": "GET /api/git/review/list",
+      "method": "GET",
+      "pathTemplate": "/api/git/review/list",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 32,
+            "enum": [
+              "uncommitted",
+              "branch"
+            ]
+          },
+          "base": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_review_list_route",
+      "sourceLines": [
+        126,
+        127
+      ]
+    },
+    {
+      "id": "GET /api/git/review/rev-parse",
+      "method": "GET",
+      "pathTemplate": "/api/git/review/rev-parse",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path"
+      ],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "ref": {
+            "type": "string",
+            "maxLength": 256
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_rev_parse_route",
+      "sourceLines": [
+        158,
+        159
+      ]
+    },
+    {
+      "id": "GET /api/git/file-diff",
+      "method": "GET",
+      "pathTemplate": "/api/git/file-diff",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path",
+        "query.file"
+      ],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "file": {
+            "type": "string",
+            "maxLength": 4096
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_file_diff_route",
+      "sourceLines": [
+        142,
+        146
+      ]
+    },
+    {
+      "id": "GET /api/git/review/diff",
+      "method": "GET",
+      "pathTemplate": "/api/git/review/diff",
+      "source": "hermes_cli/web_routers/git.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": false,
+      "pathFields": [
+        "query.path",
+        "query.file"
+      ],
+      "resultProjection": "redact",
+      "availability": "withheld",
+      "limitations": [
+        "Explicit 403: safe authoritative scoped implementation pending"
+      ],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "file": {
+            "type": "string",
+            "maxLength": 4096
+          },
+          "scope": {
+            "type": "string",
+            "maxLength": 32,
+            "enum": [
+              "uncommitted",
+              "branch"
+            ]
+          },
+          "base": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "staged": {
+            "type": "boolean"
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "git_review_diff_route",
+      "sourceLines": [
+        131,
+        138
+      ]
+    }
+  ],
+  "existingWsReuse": {
+    "profiles": [
+      "profiles.list",
+      "profiles.create",
+      "profiles.describe",
+      "profiles.configure",
+      "profiles.get_asset",
+      "profiles.set_asset"
+    ],
+    "conversation": [
+      "session.create",
+      "session.resume",
+      "session.activate",
+      "session.list",
+      "session.history",
+      "session.interrupt",
+      "session.branch",
+      "session.events.since",
+      "prompt.submit",
+      "command.dispatch",
+      "command.resolve",
+      "commands.catalog"
+    ],
+    "attachments": [
+      "image.attach_bytes",
+      "pdf.attach",
+      "file.attach",
+      "image.detach"
+    ],
+    "model": [
+      "model.options",
+      "config.get",
+      "config.set"
+    ],
+    "tools_skills_mcp_plugins": [
+      "tools.list",
+      "toolsets.list",
+      "tools.show",
+      "tools.configure",
+      "skills.manage",
+      "skills.reload",
+      "mcp.catalog",
+      "mcp.servers.list",
+      "mcp.servers.add",
+      "mcp.servers.remove",
+      "mcp.servers.test",
+      "plugins.manage",
+      "plugins.catalog.lookup"
+    ],
+    "terminal": [
+      "process.list",
+      "process.kill",
+      "shell.exec"
+    ]
+  },
+  "existingWsCautions": [
+    "Do not forward config.get key=full: it expands effective credentials.",
+    "Do not use cli.exec as a REST fallback. Arbitrary plugin REST is unlisted.",
+    "Shell/terminal/tool/plugin execution retains upstream agent authority and approvals; the REST workspace grant is not an agent sandbox.",
+    "profiles.create must explicitly set mirror_credentials=false unless credential sharing is separately intended.",
+    "tools.configure and some tools/learning methods do not bind an explicit profile without a live session; use supported scoped REST or an exact live owner.",
+    "voice.record/voice.tts control PC microphone/playback, not Android audio."
+  ],
+  "remainingGates": [
+    "Reviewed connection deployment to the current PC gateway: not installed or enabled.",
+    "Full settings/schema/provider credential setup, custom endpoints, OAuth manager, env reveal: not renderer capabilities.",
+    "Profile rename/delete/import/export/sticky-default/open-terminal not implemented by this catalog; WS profile lifecycle only partially equivalent.",
+    "Dynamic plugin REST/socket APIs, Bot Mode plugin UI/commands and arbitrary plugin capability contracts require per-plugin audits.",
+    "Interactive console/PTY, terminal streaming, Git mutations/review shipping/worktrees, local-model runtime management remain separate typed-host integration gates.",
+    "Messaging setup/pairing, webhooks, cron create/trigger/update, maintenance/update/restart/debug-share and external communications require separate approved typed capabilities.",
+    "Uploads above 25 MiB, dynamic plugin/Kanban attachment REST, media URL proxying and native Android storage/share integrations are not supplied.",
+    "Bounded relay STT/TTS and file/image attachments have original-service byte transport proof with injected provider boundaries, not valid-provider semantics, real microphone/playback, streaming/live voice or renderer/device acceptance.",
+    "The isolated proof covers a real subset, not all catalog services or full Android/Desktop parity.",
+    "Session-bound file reads, learning/skill mutations, mkdir, provider-engine warm-up leases and opaque Git aggregate/diff/status remain explicitly withheld. See per-operation availability.",
+    "Startup/sidebar/history reads have scoped isolated original-service proof, not renderer/device/live-profile acceptance. SQL source ownership scans are bounded to 20000 rows per store, 4096 connected rows, and 32 granted profiles; oversized/unavailable stores report failed reads, never successful empty history.",
+    "Model picker cold-cache refresh can contact original providers and warm caches. Its bounded two-worker/eight-second foreground deadline retains worker admission until settlement; fixture proof uses only synthetic local caches with network blocked.",
+    "Blocking OS/service mutation cannot be forcibly interrupted safely: cancellation/deadlines retain admission and write barriers until settlement, return uncertainty and never automatically retry; no cross-call idempotency or last-write CAS."
+  ],
+  "sourceSha256": {
+    "hermes_cli/web_routers/profiles.py": "d4206f10b6114e7cd8ac1d049a8f69592c7ac83bd8cc473e0c384bc3030fbf14",
+    "hermes_cli/web_routers/status.py": "15817402186f010fba182518ff5569700d84ac6437860cb9575465346283ba55",
+    "hermes_cli/web_routers/config_env.py": "ae789939968a9dcecce364094bc11dbf61fef031f4521e9d66a158caa285cf3c",
+    "hermes_cli/web_routers/files.py": "f3f11666944fc6e5b8f050476b5208a3bf0ad7338fdb202bc2620bc788981997",
+    "hermes_cli/web_routers/models.py": "7250d2b17addca12b3e2d50b1b019dec96cbec03b7227de186f35810bbdd9d73",
+    "hermes_cli/web_routers/sessions.py": "ad4c349b5b5f16c92d524e4fe5e721c40f877eabe6b1a74d3cfba17895b4ee70",
+    "hermes_cli/web_routers/audio.py": "906f975ef5580658a8c2e02fa111f4ce238a5e8fb30dcd4ede3102ac26f5d2fd",
+    "hermes_cli/web_routers/skills.py": "77f304a13486d8273b5aa437ca0dd2573c2d071472d1284390d34858df96e39e",
+    "hermes_cli/web_routers/mcp.py": "b3832e7b6f2466f8c50abb806e09a920f2b500802afb30a7a16221b59d6eff2d",
+    "hermes_cli/web_routers/tools.py": "731686aef7847d564b0ac6eda01fa874f1446e437de7ac2128319dfaf6ccf2ad",
+    "hermes_cli/web_routers/cron.py": "162275ca82796e5f6edf063b599f8193923845ccb13c13bf340ddd920b9030ba",
+    "hermes_cli/web_routers/git.py": "363e486bc06e9e6b24b983b45377a140e5e5f2dce5dbca45220d4ca462118f4b",
+    "apps/shared/src/gateway-contract.openrpc.json": "8848b394df533af8b37afd3cdccfc48b3e3d6ca1ce4037ebaf38653e33ed832e",
+    "tui_gateway/methods_onboarding.py": "35d2c06e4515db01afe5d118a27cebfb7c50f2bff061a8bb4d2c29a4861d290e",
+    "hermes_constants.py": "8d55a41452b625061f1f2e2f507a7e7ffb2a396e711afcc7aee28b03a6e8fa9d",
+    "hermes_cli/profiles.py": "4bad019b99bb8532d25252af53f997f2c2207232b8b694e2020f26d016ac4fd8",
+    "hermes_state.py": "c24484b3026a377621dd1a0f1d23de8e0d9d9d0b6d9600d47cee9368646c9577",
+    "hermes_state_sessions.py": "9245d76f93eb7105bbf35442eef61fbbc59aab36d9838c091ac4005057bafa95",
+    "hermes_state_messages.py": "5d81a781e61650d04e7d239fae5a59d1aa65632a029b1e14ad9ccb113de93a62",
+    "hermes_state_timeline.py": "ad605786c9ef97da056dbe88e2302d033207ac099cb6cc99b8efcaded38c7329",
+    "hermes_state_titles.py": "a16bbbfc27cd07894418477b3176fc2d65ff8d25079e7e4c76d67de0b2f0986a",
+    "hermes_cli/dashboard_auth/registry.py": "d4470f431abb83a60a44c865a951fc0a4f419d95938980e46ee3cfb246055ca0",
+    "hermes_cli/dashboard_auth/middleware.py": "b36464fd05946aff9c2b31843243711de55e61d16d65dcd8a69aea2721e7fc45",
+    "hermes_cli/dashboard_auth/request_utils.py": "243d5a929b8b37f2694263448ff624751f81082755f1a5efda83f0e4bf062f24",
+    "hermes_state_search.py": "7cab568123f0a11d3b715a1d3fc03e41589cbc40b0e24ae2e7442d6d574f27c2",
+    "hermes_state_usage.py": "829c4c8838fc041d6b55357e2179c8e1c440303666acb030ab8c74b3c3e81ec3",
+    "hermes_cli/session_listing.py": "c68ca4a4409abf06c16292b383da9c7df72b3daddadc12c7d4cadd43ba36dd13",
+    "hermes_cli/inventory.py": "ef4280ca5abc210e4ef273015d04debf5b5582375af272b52822b56a8c03d04a",
+    "hermes_cli/web_server_sessions.py": "70eadc8767c730fe588cca26b0b9c9d4a27233d7c395c32a89845ef131766473",
+    "hermes_cli/web_server_profiles.py": "d5a8fdd14de5ad5ce88ab263fc1068bebf2e1692d5a06c8f4f7af6b2024c54b8",
+    "hermes_cli/web_server_config.py": "94bc335e3a09b3c05974cb5d7543dadfe09fe15e4149fed6e7bda5564f7d05df",
+    "hermes_cli/config_defaults.py": "3770f92378e37093720040de6d4813202a88edc7a196415dfc7be7b4e88064d7",
+    "hermes_cli/web_models.py": "9e13fbbc7429a843fafca636a37192b0a2a4a876f778eb7fe7266c78b823e0dd",
+    "hermes_cli/web_server_files.py": "7e0628d69e6db82efad0424c167c126654f5e92570b82cf50250223f3daeadab",
+    "tui_gateway/server.py": "6807f277b14dde36dd3c2558b33b29b89db1dda5640de7e50555b8b199244974",
+    "tui_gateway/prompt_attachments.py": "212f9a54f67db491a3ef9a7e046bcd4483984f898c05f79a52a6b6ef3284cafa",
+    "tui_gateway/methods_prompt.py": "7307dba5aa1df597c99c551b4f344d0e292141e0e6c45f3c3fa2daddb0dbeee9",
+    "tui_gateway/contracts/prompt_voice.py": "c0e1fff281fab0e356779677022fefad37d42d7288563429b21e9af3fa390499",
+    "tools/voice_client_config.py": "0c2a922bb597ca93d7805642291b405c8add59e7c61d64ab344f726e7216d343",
+    "tools/transcription_tools.py": "bd0402c231fa38da0679d3b58c0502de8b878b0c5e6410cbd6b17d6a227c0291",
+    "tools/transcription_cloud.py": "af7bdcee0eddb136ba4351acc049db67affc6afb2aa3a6afc7263cd3cdaaed77",
+    "tools/stt_lease.py": "bf2221e9c517485e39ed78ba50ccc9fe868479beb6b758f0b686db48fa40c523",
+    "tools/tts_tool_lifecycle.py": "943e3142f0065a3e2339ac66ef82f5b9513e931bf380f6a23d8ba6736eccf2bc",
+    "apps/desktop/src/global.d.ts": "a68f462f009657cbd1ff0a138343c4538bd40ab2f9915930f3ff4422260a1459",
+    "apps/desktop/electron/main.ts": "0230ab97b874e3e504ea150512cf2cba80dbd1f5c45f60add68c37760d75decb",
+    "apps/desktop/src/api/system.ts": "c84a918cd26d5f4c7a029d6f30eab89499e9e04f896e85df220a835aa60f26f9",
+    "apps/desktop/src/plugins/kanban/api.ts": "0bdbd684e91217ccbbe9fda3dc7b3a441d94a342f71f9ba1a69bb5ae34438ed3",
+    "apps/desktop/src/app/session/hooks/use-prompt-actions/index.ts": "8d43c3adfb8ef2b9b53da9d251e949fbaab41f9b2db22a43b1624a83c52d0361",
+    "apps/desktop/src/app/session/hooks/use-prompt-actions/submit.ts": "ebb6171098c11b5e15b164dba5bb195b3a0ef2f698f27b9c23fb770eeebc2e8e",
+    "apps/desktop/src/app/chat/composer/hooks/use-mic-recorder.ts": "e47f3c24dc3793df4579f1c65863062fe56dc02c86f8231eaff57eba37ecd08d",
+    "apps/desktop/src/lib/voice-client-direct.ts": "40dee7c570686308dcd93fb5e32488d86a875d6e42578363efc1d53907b004d3",
+    "apps/desktop/src/lib/voice-playback.ts": "2e394edad71ef04ee4b7baef5fb4f3329f9a02909037d456cac6899a24ee2646"
+  }
+}

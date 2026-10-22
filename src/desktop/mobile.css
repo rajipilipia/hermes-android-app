@@ -1,0 +1,198 @@
+/* Phone layout for the pinned Hermes Desktop renderer. Loaded after the renderer styles.
+   Scoped by viewport/pointer so tablets, the unfolded Fold and desktop preview keep the
+   upstream layout. Nothing here removes a feature: hidden titlebar buttons stay reachable
+   from the command palette (status bar) and keyboard actions. */
+
+/* ---- Phone width (< 640px, the upstream narrow breakpoint) ---- */
+@media (max-width: 639.98px) {
+  /* Frees titlebar room so the chat tab stays on one row (and "+" stays visible down to 320px).
+     Emulator round 2 measured what each hidden button does on a phone:
+     - Layout editor: also in the command palette ("Toggle layout edit mode").
+     - HUD mode: a desktop floating window; on Android the tap only toggles a pressed state.
+     - Swap sidebar sides: flips a stored preference, but the phone drawer always opens on the
+       left, so nothing visible changes. Both keep working at 640px and wider. */
+  [data-titlebar-cluster="right"] button[aria-label="Layout editor"],
+  [data-titlebar-cluster="right"] button[aria-label="HUD mode"],
+  [data-titlebar-cluster="right"] button[aria-label="Swap sidebar sides"] {
+    display: none !important;
+  }
+  /* Upstream measures the left titlebar reservation once and can keep a stale 134px on the home
+     screen (measured at 320px: the left cluster ends at 38px). On a phone the left cluster is
+     only the 24px sidebar toggle at 14px, so the reservation is 38 + 12 = 50px. */
+  [data-zone-header] {
+    --panel-titlebar-left: 50px !important;
+  }
+  /* The chat tab keeps a 192px cap upstream; at 320px that pushes "+" 4px under the right
+     buttons. Cap it to the room actually left (left toggle 50px + right buttons/"+" ~100px). */
+  [data-slot="pane-tab"] {
+    max-width: min(192px, calc(100vw - 150px)) !important;
+  }
+  /* Composer status rows (e.g. "Share usage stats? ... Share with Nous / Keep on this computer /
+     No thanks / Details") put all buttons in one no-wrap column, which ran past the right edge.
+     On a phone the buttons move to their own line under the text and wrap. */
+  [data-slot="composer-status-stack"] .status-row-actions {
+    grid-column: 3 / -1;
+    grid-row: 2;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    row-gap: 0.125rem;
+  }
+  /* Same idea for the top butterbar, if one is shown. */
+  [data-slot="butterbar"] {
+    height: auto;
+    min-height: 1.5rem;
+    grid-template-columns: 0 minmax(0, 1fr) auto !important;
+    padding-block: 0.25rem;
+  }
+  [data-slot="butterbar"] .truncate {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  /* Full-screen overlays (Settings, command center) keep a 44px desktop margin on every side.
+     Use the width; keep the top clear of the fixed titlebar buttons. */
+  [data-overlay-surface] {
+    padding: calc(var(--titlebar-height, 34px) + 0.375rem) 0.5rem 0.5rem;
+  }
+  /* The welcome wordmark otherwise keeps a 44px minimum and spills past a 360px screen. */
+  :root .wordmark {
+    --fit-min: 1.5rem !important;
+  }
+  /* In-app browser pane: Desktop keeps it beside the chat (22rem minimum), which left the chat
+     ~90px wide. On a phone show one at a time: while a browser pane is visible the chat group
+     steps aside and the pane takes the width; closing the pane brings the chat back. */
+  body:has([data-pane-host^="preview-tile:"]:not([inert]))
+    [data-tree-split] > div:has([data-tree-tab="workspace"]):not(:has([data-tree-tab^="preview-tile:"])) {
+    display: none !important;
+  }
+  body:has([data-pane-host^="preview-tile:"]:not([inert])) [data-tree-split] > div:has([data-tree-tab^="preview-tile:"]) {
+    flex: 1 1 0 !important; /* Desktop's 0.5 share would fill only half the screen once alone */
+    min-width: 0 !important;
+  }
+}
+
+/* ---- Phone-like: narrow, or a phone held sideways (short and touch) ---- */
+@media (max-width: 639.98px), (max-height: 500px) and (pointer: coarse) {
+  /* The window-drag strip beside the tabs is dead space on a phone and pushes "+" out of reach. */
+  [data-window-drag-handle] {
+    display: none !important;
+  }
+  /* Keyboard-shortcut chips ("Ctrl N") have no use without a hardware keyboard. */
+  [data-slot="kbd-group"],
+  kbd[data-slot="kbd"] {
+    display: none !important;
+  }
+  /* The welcome wordmark fits its width, which is huge when a phone is sideways. */
+  :root .wordmark {
+    max-width: 26rem;
+  }
+}
+
+/* ---- Keyboard up on a sideways phone: the page is about 120px tall ---- */
+@media (max-height: 320px) and (pointer: coarse) {
+  /* Give the whole height to the conversation and the composer while typing. */
+  footer[data-slot="statusbar"],
+  [data-titlebar-cluster] {
+    display: none !important;
+  }
+  [data-panel-header] {
+    display: none !important;
+  }
+  /* Composer status rows (share stats, session notices) sit above the composer and took 39 of
+     the 122px in the emulator, leaving no readable chat (round 3, R2-4). They return when the
+     keyboard closes. */
+  [data-slot="composer-status-stack"] {
+    display: none !important;
+  }
+}
+
+/* ---- Touch ---- */
+@media (pointer: coarse) {
+  /* Small controls keep their look but get a thumb-sized hit area (transparent ::after). */
+  :is(
+    [data-size="icon-titlebar"],
+    [data-slot="pane-tab"] button,
+    [data-zone-tabstrip] button,
+    footer[data-slot="statusbar"] button,
+    button[aria-label="Dismiss error"],
+    button[aria-label="Add context"],
+    button[aria-label="Switch model"],
+    button[aria-label="Voice dictation"],
+    button[aria-label="Session actions"]
+  ) {
+    position: relative;
+  }
+  :is(
+    [data-size="icon-titlebar"],
+    [data-slot="pane-tab"] button,
+    [data-zone-tabstrip] button,
+    footer[data-slot="statusbar"] button,
+    button[aria-label="Dismiss error"],
+    button[aria-label="Add context"],
+    button[aria-label="Switch model"],
+    button[aria-label="Voice dictation"],
+    button[aria-label="Session actions"]
+  )::after {
+    content: "";
+    position: absolute;
+    inset: -6px -4px;
+  }
+  /* Composer row (2026-10-18: aligned and sized for touch). Upstream uses
+     24px controls with a 26px primary button, centers drift by 2px when the row wraps (320px).
+     Touch: 32px controls, 34px primary (send / stop / voice), one shared vertical center. */
+  form[data-slot="composer-root"] {
+    --composer-control-gap: 0.375rem;
+  }
+  form[data-slot="composer-root"] :is(
+    button[aria-label="Add context"],
+    button[aria-label="Voice dictation"],
+    button[aria-label="Queue message"],
+    button[aria-label^="Model"],
+    [data-slot="fan-menu-anchor"]
+  ) {
+    min-width: 2rem;
+    min-height: 2rem;
+    align-self: center;
+  }
+  /* Upstream nudges the "+" wrapper down 3px to meet the first text line of a 24px row; with
+     32px buttons 1px lines its center up with the other controls (measured). */
+  form[data-slot="composer-root"] [class*="[grid-area:menu]"] {
+    translate: 0 1px !important;
+  }
+  form[data-slot="composer-root"] :is(button[type="submit"], button[aria-label="Start voice conversation"]) {
+    min-width: 2.125rem;
+    min-height: 2.125rem;
+    align-self: center;
+  }
+  /* Status-row buttons ("Share with Nous", "No thanks", "Details", ...) are 16px tall upstream. */
+  [data-slot="composer-status-stack"] .status-row-actions > button {
+    min-height: 2rem;
+  }
+  /* The status stack's collapse pill above the composer is 48x16. */
+  button[aria-label="Hide status stack"],
+  button[aria-label="Show status stack"] {
+    min-height: 1.5rem;
+  }
+  /* Reply actions (copy, branch, read aloud, retry) are 14px icons 20px apart upstream. */
+  [data-slot="aui_msg-actions"] {
+    gap: 0.125rem;
+  }
+  [data-slot="aui_msg-actions"] button {
+    width: 2rem;
+    height: 2rem;
+  }
+  /* Session rows are 26px tall upstream. */
+  .row-hover {
+    min-height: 2.5rem;
+  }
+  footer[data-slot="statusbar"] {
+    height: 1.75rem;
+  }
+  /* The sessions drawer: dim the chat behind it and keep the fixed toggle off its tabs. */
+  [data-narrow-overlay] {
+    box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.38), 0 25px 50px -12px rgb(0 0 0 / 0.35);
+  }
+  [data-narrow-overlay] [role="tablist"] {
+    padding-left: 44px;
+  }
+}
