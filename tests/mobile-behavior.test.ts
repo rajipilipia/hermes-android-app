@@ -237,6 +237,35 @@ describe("long-press text selection (NG-4)", () => {
     document.getElementById("text")!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
     expect(desktopMenu).toHaveBeenCalledTimes(1);
   });
+
+  it("Android owns text menus even when WebView reports a mouse pointer or no recent touch", () => {
+    document.documentElement.dataset.androidTouch = "";
+    try {
+      clock += 5_000;
+      hold("composer", "mouse");
+      document.getElementById("text")!.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+      expect(desktopMenu).not.toHaveBeenCalled();
+      hold("row", "touch");
+      expect(desktopMenu).toHaveBeenCalledTimes(1);
+    } finally {
+      delete document.documentElement.dataset.androidTouch;
+    }
+  });
+
+  it("selected text inside a sent-message reaction wrapper also belongs to Android", () => {
+    document.documentElement.dataset.androidTouch = "";
+    const bubble = document.getElementById("bubble")!;
+    const range = document.createRange();
+    range.selectNodeContents(bubble);
+    window.getSelection()!.addRange(range);
+    try {
+      expect(hold("bubble", "touch").defaultPrevented).toBe(false);
+      expect(desktopMenu).not.toHaveBeenCalled();
+    } finally {
+      window.getSelection()!.removeAllRanges();
+      delete document.documentElement.dataset.androidTouch;
+    }
+  });
 });
 
 describe("Desktop's edit menu on Android (contextMenuEdit)", () => {

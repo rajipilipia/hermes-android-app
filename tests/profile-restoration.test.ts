@@ -27,26 +27,26 @@ function host(names = ["default", "research"], baseUrl = origin) {
 it("restores the phone's last profile without changing the server primary", async () => {
   localStorage.setItem(key, "research");
   const first = host();
-  expect(await first.profile?.getDefault()).toEqual({ profile: "research" });
+  expect(await first.profile?.getDefault()).toEqual({ connectionId: null, profile: "research" });
   expect(await first.getConnection()).toMatchObject({ profile: "default" });
   expect(await first.getConnection("research")).toMatchObject({ profile: "research" });
 });
 it("falls back when a remembered profile was deleted", async () => {
   localStorage.setItem(key, "research");
-  expect(await host(["default"]).profile?.getDefault()).toEqual({ profile: null });
+  expect(await host(["default"]).profile?.getDefault()).toBeNull();
 });
 it("never restores one server's profile on another server", async () => {
   localStorage.setItem(key, "research");
-  expect(await host(["default", "research"], "https://other.example").profile?.getDefault()).toEqual({ profile: null });
+  expect(await host(["default", "research"], "https://other.example").profile?.getDefault()).toBeNull();
 });
 it("remembers selection locally across host recreation, not through a profile write API", async () => {
   await host().profile?.remember("research");
   expect(localStorage.getItem(key)).toBe("research");
-  expect(await host().profile?.getDefault()).toEqual({ profile: "research" });
+  expect(await host().profile?.getDefault()).toEqual({ connectionId: null, profile: "research" });
 });
 it("preserves primary routing without a remembered override or a valid persistence origin", async () => {
-  expect(await host().profile.getDefault()).toEqual({ profile: null });
+  expect(await host().profile.getDefault()).toBeNull();
   localStorage.setItem(key, "default");
-  expect(await host().profile.getDefault()).toEqual({ profile: null });
-  expect(await host(["default"], "/").profile.getDefault()).toEqual({ profile: null });
+  expect(await host().profile.getDefault()).toBeNull();
+  expect(await host(["default"], "/").profile.getDefault()).toBeNull();
 });

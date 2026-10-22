@@ -14,6 +14,8 @@
 //    right-click menu (see installNativeTextSelection).
 // 6. Back closes Desktop's browser pane on a phone once its page has no more history (installPaneBack).
 
+import { installSingleScreenLayout } from "./single-screen.ts";
+
 const TEXT_INPUT = new Set(["", "text", "search", "url", "email", "tel", "password", "number"]);
 /** Composer chrome (editor, attach, mic, send). A touch here counts as keyboard intent.
  *  Not `[data-composer-target]`: that wraps the whole chat surface, so every tap on chat text
@@ -215,6 +217,11 @@ const DESKTOP_MENU = '[data-hermes-context-menu-trigger], [data-slot="context-me
 export function nativeTextSelectionTarget(target: EventTarget | null, win: Window & typeof globalThis = window): boolean {
   if (!(target instanceof win.Element)) return false;
   if (isTextEntry(target.closest<HTMLElement>("textarea, input, [contenteditable]"))) return true;
+  // A selected word in a sent bubble is still text, not a request for reactions.
+  // Test intersection so an unrelated selection cannot swallow a tab/row menu.
+  const selection = win.getSelection();
+  if (selection && !selection.isCollapsed && selection.rangeCount > 0 &&
+      Array.from({ length: selection.rangeCount }, (_, i) => selection.getRangeAt(i)).some(range => range.intersectsNode(target))) return true;
   if (target.closest(DESKTOP_HOLD)) return false;
   const menu = target.closest(DESKTOP_MENU);
   // Pane-body menus are fallbacks; explicit row/tab/status menus retain their gestures.
@@ -227,7 +234,9 @@ export function nativeTextSelectionTarget(target: EventTarget | null, win: Windo
  *  menu took it (a right-click menu), covered Android's bar, and its Cut/Copy/Paste ran an
  *  Electron main-process edit. This listener runs before Desktop's (installed first, same
  *  window capture phase) and stops the event without preventDefault, so Android's default
- *  action runs. Mouse right-clicks, and the Desktop surfaces above, keep Desktop's menus. */
+ *  action runs. Android owns text menus regardless of the reported pointer kind:
+ *  WebView/selection handles can emit mouse-like or delayed contextmenu events.
+ *  Non-Android mouse previews and explicit non-text Desktop menus are preserved. */
 export function installNativeTextSelection(win: Window & typeof globalThis = window, now: () => number = () => Date.now()): () => void {
   const doc = win.document;
   let touching = false;
@@ -242,7 +251,7 @@ export function installNativeTextSelection(win: Window & typeof globalThis = win
   const onContextMenu = (event: Event) => {
     const pointer = (event as PointerEvent).pointerType;
     const fromTouch = pointer ? pointer === "touch" : touching || now() - lastTouch < 1500;
-    if (!fromTouch) return;
+    if (!fromTouch && !doc.documentElement.hasAttribute("data-android-touch")) return;
     if (!nativeTextSelectionTarget(event.target, win)) return;
     event.stopImmediatePropagation();
   };
@@ -281,6 +290,6 @@ export function installMobile(win: Window & typeof globalThis = window): () => v
   const touch = !!win.matchMedia?.("(any-pointer: coarse)").matches;
   if (!touch) return () => {};
   win.document.documentElement.dataset.androidTouch = "";
-  const stops = [installKeyboardGuard(win), installOverlayDismiss(win), installPauseBlur(win), installBubbleTapFocus(win), installNativeTextSelection(win), installPaneBack(win)];
+  const stops = [installSingleScreenLayout(win), installKeyboardGuard(win), installOverlayDismiss(win), installPauseBlur(win), installBubbleTapFocus(win), installNativeTextSelection(win), installPaneBack(win)];
   return () => stops.forEach((stop) => stop());
 }

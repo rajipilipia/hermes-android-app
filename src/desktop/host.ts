@@ -1,6 +1,6 @@
 // Android/browser host seam. Implemented by behavior-first tracer bullets.
 import type { PcAuth } from "../pc-auth";
-import type { HermesApiRequest } from "../../vendor/hermes/apps/desktop/src/global";
+import type { DesktopProfileRoute, HermesApiRequest } from "../../vendor/hermes/apps/desktop/src/global";
 import {
   canonicalProfile,
   capabilityCall,
@@ -119,21 +119,24 @@ export function createDesktopHost(options: HostOptions) {
       try { if (profileKey) window.localStorage.setItem(profileKey, selected); } catch { /* storage unavailable */ }
       return { profile: selected };
     },
-    getDefault: async () => {
+    getDefault: async (): Promise<DesktopProfileRoute | null> => {
       const fallback = await bootstrap();
       let selected: string;
       try {
         const saved = profileKey ? window.localStorage.getItem(profileKey) : null;
         // No remembered override: preserve the genuine primary-route bootstrap.
-        if (!saved || saved === fallback) return { profile: null };
+        if (!saved || saved === fallback) return null;
         selected = canonicalProfile(saved);
-      } catch { return { profile: null }; }
+      } catch { return null; }
       // Validate a remembered owner against this server before opening its history.
       const result = await rest()(capabilityCall({ path: "/api/profiles" }), 30_000);
       assertOpen();
       const rows = (result.body as { profiles?: { name?: unknown }[] } | null)?.profiles;
       if (result.status !== 200 || !Array.isArray(rows)) throw new Error("Hermes profile list is unavailable.");
-      return { profile: rows.some(row => row?.name === selected) ? selected : null };
+      // This is a DesktopProfileRoute, not the legacy profile.get response.
+      // Missing connectionId becomes a bogus registry route and crashes tab +
+      // in setSessionOwnerHint after the server has already created the session.
+      return rows.some(row => row?.name === selected) ? { connectionId: null, profile: selected } : null;
     },
   };
   return {

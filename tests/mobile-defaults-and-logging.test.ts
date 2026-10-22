@@ -71,6 +71,45 @@ it("Version & updates and Backend version are hidden by default and can be turne
   expect(() => patchStatusbarSource("/x/" + prefsPath, "changed")).toThrow(/changed upstream/);
 });
 
+it("compact profile access ignores rail/drawer visibility without competing create dialogs", async () => {
+  const { resolveConfig } = await import("vite");
+  const { plugins } = await resolveConfig({}, "build");
+  const order = plugins.map(plugin => plugin.name);
+  expect(order.indexOf("android-statusbar-defaults")).toBeLessThan(order.indexOf("@rolldown/plugin-babel"));
+  const base = "/vendor/hermes/apps/desktop/src/";
+  const itemsPath = base + "app/shell/hooks/use-statusbar-items.tsx";
+  const items = patchStatusbarSource(itemsPath, read(itemsPath.slice(1)))!;
+  const hidden = new Function("compactProfilePicker", "sessionsShowing", "profileRailVisible",
+    `return ${items.match(/hidden: (.*),\n\s+id: 'profile-switcher'/)![1]}`);
+  const original = new Function("sessionsShowing", "profileRailVisible",
+    `return ${read(itemsPath.slice(1)).match(/hidden: (.*),\n\s+id: 'profile-switcher'/)![1]}`);
+  for (const compact of [true, false]) {
+    for (const sessions of [true, false]) {
+      for (const rail of [true, false]) {
+        expect(hidden(compact, sessions, rail)).toBe(compact ? false : original(sessions, rail));
+      }
+    }
+  }
+  expect(items).toContain("const compactProfilePicker = useMediaQuery(");
+  expect(items).toMatch(/\n\s+compactProfilePicker,\n/); // Recompute when folding/unfolding.
+  const ownsCreateRequest = new Function("sessionsShowing", "profileRailVisible",
+    `return ${items.match(/listenForCreateRequests=\{([^}]+)\}/)![1]}`);
+  const pickerPath = base + "app/chat/sidebar/profile-dropdown-switcher.tsx";
+  const picker = patchStatusbarSource(pickerPath, read(pickerPath.slice(1)))!;
+  const create = new Function("listenForCreateRequests", "setCreateOpen",
+    picker.match(/lastCreateRef.current = createRequest\n([\s\S]*?)\n\s*\}, \[createRequest/ )![1]);
+  for (const sessions of [true, false]) {
+    for (const rail of [true, false]) {
+      const railOwns = sessions && rail;
+      let dropdownOpens = false;
+      create(ownsCreateRequest(sessions, rail), (open: boolean) => { dropdownOpens = open; });
+      expect(dropdownOpens).toBe(!railOwns);
+    }
+  }
+  expect(picker).toContain("listenForCreateRequests = true"); // Other/wide callers keep their behavior.
+  expect(picker).toContain("[createRequest, listenForCreateRequests]");
+});
+
 it("app icon is the Hermes Agent portrait as an adaptive icon at every density", () => {
   const manifest = read("android/AndroidManifest.xml");
   expect(manifest).toContain('android:icon="@mipmap/ic_launcher"');

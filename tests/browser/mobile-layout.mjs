@@ -45,15 +45,23 @@ const sessions = Array.from({ length: 12 }, (_, i) => ({
 }));
 
 /** Hermes's own REST (what the native HermesApi bridge returns), synthetic fixtures. */
-export function restReply(params, calls = []) {
+const layoutProfiles = (multi) => [{ name: "default", is_active: true, is_default: true },
+  ...(multi ? Array.from({ length: Number(process.env.LAYOUT_PROFILE_COUNT ?? 10) - 1 }, (_, i) => ({ name: `layout-profile-${i + 1}-long-name`, is_active: false, is_default: false })) : [])];
+export function restReply(params, calls = [], multiProfile = false) {
   const op = params.operation;
   calls.push(op);
   if (op === "GET /api/profiles/active") return { status: 200, body: { active: "default", current: "default" } };
   const body =
-    op === "GET /api/profiles" ? { profiles: [{ name: "default", is_active: true, is_default: true }], active_profile: "default" }
+    op === "GET /api/profiles" ? { profiles: layoutProfiles(multiProfile), active_profile: "default" }
     : op === "GET /api/config" ? { display: { language: "en", skin: "nous" }, agent: { max_turns: 90 }, compression: { enabled: true } }
+    : op === "GET /api/config/schema" ? { fields: {} }
+    : op === "GET /api/config/defaults" ? {}
+    : op === "GET /api/model/options" ? { providers: [], current: { model: "gpt-5", provider: "openai" } }
+    : op === "GET /api/model/auxiliary" ? { main: { model: "gpt-5", provider: "openai" }, tasks: [] }
+    : op === "GET /api/model/moa" ? { enabled: false, presets: {}, default_preset: "", active_preset: "", reference_models: [], aggregator: { model: "gpt-5", provider: "openai" } }
     : op === "GET /api/sessions" || op === "GET /api/profiles/sessions" ? { sessions, total: sessions.length, has_more: false }
-    : op === "GET /api/profiles/sessions/sidebar" ? { recents: { sessions: sessions.map((r) => ({ ...r, profile: "default" })), profiles_truncated: { default: false }, profiles_usage: {} }, cron: { sessions: [] }, messaging: { sessions: [], total: 0 }, errors: [], storage: {} }
+    : op === "GET /api/profiles/sessions/sidebar" ? { recents: { sessions: sessions.map((r) => ({ ...r, profile: "default" })), profiles_truncated: { default: false }, profiles_usage: {} }, cron: { sessions: [], total: 0 }, messaging: { sessions: [], total: 0 }, errors: [], storage: {} }
+    : op === "GET /api/sessions/{session_id}" ? { ...(sessions.find(s => s.id === params.pathParams?.session_id) ?? sessions[0]), profile: "default" }
     : op === "GET /api/sessions/{session_id}/messages" ? { session_id: params.pathParams?.session_id ?? "stored-1", profile: "default", messages: MESSAGES.map((m) => ({ role: m.role, content: m.text })), pagination: { limit: 120, offset: 0, order: "latest", has_more: false } }
     : op === "GET /api/model/info" ? { model: "synthetic/test", provider: "test", context_length: 32768 }
     : op === "GET /api/cron/jobs" ? { jobs: [] }
@@ -65,8 +73,9 @@ export function restReply(params, calls = []) {
   return { status: 200, body };
 }
 
-function peerFor(calls) {
+function peerFor(calls, detailed = false, multiProfile = false) {
   return (ws) => {
+    let created = 0;
     ws.onMessage((text) => {
       const frame = JSON.parse(String(text));
       if (!frame.method || frame.id == null) return;
@@ -75,12 +84,12 @@ function peerFor(calls) {
       // Native only: Desktop features use Hermes's REST (window.HermesApi), never a PC add-on RPC.
       if (frame.method.startsWith("desktop.")) calls.push(`UNEXPECTED ${frame.method}`);
       else if (frame.method === "session.list") result = { sessions, total: sessions.length, has_more: false };
-      else if (frame.method === "profiles.list") result = { profiles: [{ name: "default", is_active: true }], active_profile: "default" };
+      else if (frame.method === "profiles.list") result = { profiles: layoutProfiles(multiProfile), active_profile: "default" };
       else if (frame.method === "commands.catalog") result = { commands: [{ name: "help", description: "Help", desktop: "client" }] };
       else if (frame.method === "session.events.since") result = { events: [], count: 0, latest_seq: 0, epoch: "synthetic", open_requests: [] };
       else if (frame.method === "setup.status") result = { provider_configured: true, ready: true };
       else if (frame.method === "setup.runtime_check") result = { ok: true, model: "synthetic/test", provider: "test" };
-      else if (frame.method === "model.options") result = { providers: [], current: { model: "synthetic/test", provider: "test" } };
+      else if (frame.method === "model.options") result = { providers: [], current: { model: detailed ? "gpt-5" : "synthetic/test", provider: detailed ? "openai" : "test" } };
       else if (frame.method === "session.active_list") result = { sessions: [] };
       else if (frame.method === "onboarding.state") result = { eligible: false, run: false, run_id: null, session_id: null };
       else if (frame.method === "i18n.languages") result = { languages: [] };
@@ -90,12 +99,18 @@ function peerFor(calls) {
       else if (frame.method === "session.resume")
         result = { session_id: "runtime-1", stored_session_id: frame.params?.session_id ?? "stored-1", messages: MESSAGES, message_count: MESSAGES.length, info: { desktop_contract: 8 }, running: false };
       else if (frame.method === "session.history") result = { count: MESSAGES.length, messages: MESSAGES };
+      if (detailed && frame.method === "session.resume") Object.assign(result.info, { model: "gpt-5", provider: "openai", reasoning_effort: "high" });
+      if (detailed && frame.method === "session.control.read") result = {control:{goal:null,loop:null,heartbeat:null,revision:"layout-fixture",updated_at:1790000000}};
+      if (detailed && frame.method === "session.create") result = {
+        session_id: `runtime-new-${++created}`, stored_session_id: `stored-new-${created}`, messages: [],
+        info: { desktop_contract: 8, model: frame.params.model ?? "gpt-5", provider: frame.params.provider ?? "openai", reasoning_effort: frame.params.reasoning_effort ?? "high" },
+      };
       ws.send(JSON.stringify({ jsonrpc: "2.0", id: frame.id, result }));
     });
   };
 }
 
-export async function openPage(browser, vp, { dark = false } = {}) {
+export async function openPage(browser, vp, { dark = false, detailed = false } = {}) {
   const context = await browser.newContext({
     viewport: { width: vp.width, height: vp.height },
     deviceScaleFactor: vp.dpr,
@@ -105,12 +120,26 @@ export async function openPage(browser, vp, { dark = false } = {}) {
     reducedMotion: "reduce",
   });
   const page = await context.newPage();
+  const { errors, calls } = await configureLayoutFixture(page, { detailed });
+  await page.goto(origin, { waitUntil: "networkidle" });
+  await page.locator("[data-contrib-shell]").waitFor({ timeout: 60000 }).catch(async (e) => {
+    await page.screenshot({ path: `${out}/FAILED-${vp.name}.png` });
+    console.log((await page.locator("body").innerText()).slice(0, 400), errors);
+    throw e;
+  });
+  if (process.env.CSS) await page.addStyleTag({ path: process.env.CSS });
+  return { context, page, errors, calls };
+}
+
+// Also used against the installed APK's WebView on the isolated emulator. Only
+// synthetic layout data: no provider request, sign-in, real chat or paid call.
+export async function configureLayoutFixture(page, { detailed = true, multiProfile = false } = {}) {
   const errors = [];
   const calls = [];
   page.on("pageerror", (e) => errors.push(e.message));
   if (process.env.DEBUG) page.on("console", (m) => m.type() === "error" && console.log("console.error:", m.text().slice(0, 300)));
   // Native HermesApi bridge: Hermes's own REST, answered from the fixtures above.
-  await page.exposeFunction("__hermesRestFixture", (request) => restReply(JSON.parse(request), calls));
+  await page.exposeFunction("__hermesRestFixture", (request) => restReply(JSON.parse(request), calls, multiProfile));
   await page.addInitScript(() => {
     window.HermesApi = {
       call(id, request) {
@@ -166,15 +195,8 @@ export async function openPage(browser, vp, { dark = false } = {}) {
       window.matchMedia = (q) => (String(q).includes("any-pointer") ? { ...real("not all"), matches: false, media: q } : real(q));
     });
   // The app dials its own page origin (the chosen server) since native gateways phase 1.
-  await page.routeWebSocket(/\/api\/ws(\?|$)/, peerFor(calls));
-  await page.goto(origin, { waitUntil: "networkidle" });
-  await page.locator("[data-contrib-shell]").waitFor({ timeout: 20000 }).catch(async (e) => {
-    await page.screenshot({ path: `${out}/FAILED-${vp.name}.png` });
-    console.log((await page.locator("body").innerText()).slice(0, 400), errors);
-    throw e;
-  });
-  if (process.env.CSS) await page.addStyleTag({ path: process.env.CSS });
-  return { context, page, errors, calls };
+  await page.routeWebSocket(/\/api\/ws(\?|$)/, peerFor(calls, detailed, multiProfile));
+  return { errors, calls };
 }
 
 async function shot(page, vp, name) {

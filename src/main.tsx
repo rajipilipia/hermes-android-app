@@ -1,5 +1,6 @@
 import "./desktop/fonts.css";
 import "./desktop/mobile.css";
+import "./desktop/single-screen.css";
 import "./desktop/connection.css";
 import { installMobile } from "./desktop/mobile";
 import { installDesktopHost } from "./desktop/host";

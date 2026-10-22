@@ -2,6 +2,7 @@ import { defineConfig } from "vitest/config";
 import { stripBundledFontQuery } from "./src/desktop/bundled-assets.ts";
 import { patchStatusbarSource } from "./src/desktop/statusbar-defaults.ts";
 import { patchContextMenuTouchSource } from "./src/desktop/context-menu-touch.ts";
+import { patchAndroidCompatibility } from "./src/desktop/android-compat.ts";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
@@ -23,6 +24,21 @@ export default defineConfig({
   base: "./",
   publicDir: path.join(desktop, "public"),
   plugins: [
+    {
+      name: "android-desktop-compatibility",
+      enforce: "pre",
+      transform(code, id) {
+        return patchAndroidCompatibility(id, code);
+      },
+    },
+    // Exact-source adapters must run before Babel rewrites JSX and hook bodies.
+    {
+      name: "android-statusbar-defaults",
+      enforce: "pre",
+      transform(code, id) {
+        return patchStatusbarSource(id, code);
+      },
+    },
     react(),
     babel({ presets: [compiler] }),
     {
@@ -51,13 +67,6 @@ export default defineConfig({
       enforce: "pre",
       transform(code, id) {
         return patchContextMenuTouchSource(id, code);
-      },
-    },
-    {
-      name: "android-statusbar-defaults",
-      enforce: "pre",
-      transform(code, id) {
-        return patchStatusbarSource(id, code);
       },
     },
     {

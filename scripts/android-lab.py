@@ -109,7 +109,7 @@ def adb_argv(state, *args):
 
 ROOT = Path(__file__).resolve().parents[1]
 LAB = ROOT / ".cache" / "android-lab"
-SDK = Path("C:/Android/Sdk")
+SDK = Path(os.environ.get("HERMES_ANDROID_LAB_SDK", "C:/Android/Sdk"))
 JDK = Path("C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot")
 ADB_PORT = 5041
 
@@ -175,6 +175,8 @@ PROFILES = {"phone": ("hermes_android_phone_api36", "pixel_8"),
 
 def avdmanager_argv(*args):
     tools = SDK / "cmdline-tools" / "23.0"
+    if not tools.is_dir():
+        tools = SDK / "cmdline-tools" / "latest"
     return [str(JDK / "bin" / "java.exe"), f"-Dcom.android.sdkmanager.toolsdir={tools}",
             "-classpath", str(tools / "lib" / "avdmanager-classpath.jar"),
             "com.android.sdklib.tool.AvdManagerCli", *args]
