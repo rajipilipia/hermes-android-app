@@ -2,6 +2,9 @@ import type { TranslationOverrides } from './define-locale'
 
 export const arChat = {
   composer: {
+    voiceEngineCodexLive: 'Codex Live (صوت ثنائي الاتجاه، يفوّض إلى Hermes)',
+    voiceEngineCodexLiveDescription: 'يستخدم تسجيل دخولك الحالي إلى ChatGPT. واجهة خاصة؛ لا ضمان للتوفر أو الفوترة.',
+    voiceEngineCodexLiveShort: 'Codex Live',
     message: 'الرسالة',
     wakingProfile: profile => `جار إيقاظ ${profile}`,
     placeholderStarting: 'جار بدء Hermes...',

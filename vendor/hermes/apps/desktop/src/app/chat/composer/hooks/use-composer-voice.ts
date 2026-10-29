@@ -3,7 +3,7 @@ import { computed } from 'nanostores'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import { useI18n } from '@/i18n'
-import { chatMessageText, collectUnspokenTurnSpeech } from '@/lib/chat-messages'
+import { chatMessageText, collectUnspokenTurnSpeech, lastTextPartText } from '@/lib/chat-messages'
 import { triggerHaptic } from '@/lib/haptics'
 import {
   adoptSpokenReplySession,
@@ -12,13 +12,15 @@ import {
   resolveSpokenReply
 } from '@/lib/spoken-reply'
 import { CONVERSATION_LEASE, READ_ALOUD_LEASE, syncTtsLease } from '@/lib/tts-lease'
-import { toLiveHistory } from '@/lib/voice-live'
+import { isLiveVoiceMode, toLiveHistory } from '@/lib/voice-live'
+import type { VoiceHandoff, VoiceTaskSnapshot } from '@/lib/voice-live-task'
 import { clearWakeIndicator, syncWakeIndicatorWithVoice } from '@/lib/wake-indicator'
 import { $voiceConversationStartRequest, takeVoiceConversationStart } from '@/store/composer'
 import { resetBrowseState } from '@/store/composer-input-history'
 import { recordFeatureUse } from '@/store/desktop-metrics'
 import { $gateway } from '@/store/gateway'
 import { notify, notifyError } from '@/store/notifications'
+import { requestForOwnedSession } from '@/store/session-states'
 import { $voiceLiveStatus, refreshVoiceLiveStatus, selectedVoiceChatMode } from '@/store/voice-live'
 import { $autoSpeakReplies, $voiceStopPhrase, setAutoSpeakReplies } from '@/store/voice-prefs'
 import { resumeWakeAfterVoice } from '@/store/wake-word'
@@ -46,6 +48,7 @@ interface UseComposerVoiceArgs {
   onInterrupt?: () => Promise<void> | void
   onSubmit: ChatBarProps['onSubmit']
   onTranscribeAudio: ChatBarProps['onTranscribeAudio']
+  queueSessionKey?: ChatBarProps['queueSessionKey']
   sessionId: string | null | undefined
   /** This composer's focus-bus key — voice toggles targeting another
    *  composer (or the active one, when not us) are ignored. */
@@ -68,6 +71,7 @@ export function useComposerVoice({
   onInterrupt,
   onSubmit,
   onTranscribeAudio,
+  queueSessionKey,
   sessionId,
   target
 }: UseComposerVoiceArgs) {
@@ -145,6 +149,7 @@ export function useComposerVoice({
     return {
       id: last.id,
       pending: Boolean(last.pending),
+      segmentText: lastTextPartText(last),
       text,
       turnKey: assistantTurnKey(sessionId, messages, last.id)
     }
@@ -183,11 +188,19 @@ export function useComposerVoice({
 
   /** A GPT-Live delegation → Hermes turn. The bubble and the persisted row are
    *  what the user said; the transcript window rides the model input only. */
-  const submitLiveDelegation = async (text: string, voiceContext: string) => {
+  const acceptedVoiceSession = useRef<string | null>(null)
+  // eslint-disable-next-line no-restricted-syntax -- accepted-session adoption token, not an atom mirror
+  useEffect(() => {acceptedVoiceSession.current = sessionId || null}, [sessionId])
+
+  const submitLiveDelegation = async (text: string, voiceContext: string, handoff?: VoiceHandoff) => {
     triggerHaptic('submit')
     resetBrowseState(sessionId)
     clearDraft()
-    await onSubmit(text, { surface: 'voice-live', voiceContext })
+    let accepted = false
+    await onSubmit(text, { surface: 'voice-live', voiceContext, ...(handoff && {voiceHandoff: handoff,
+      onAccepted: (identity: {runtimeSessionId: string}) => {accepted = true; acceptedVoiceSession.current = identity.runtimeSessionId}
+    }) })
+    if (handoff && !accepted) {throw new Error('Hermes did not accept the voice request; no automatic retry was started')}
   }
 
   /** Recent text turns of this chat, as GPT-Live startup history. */
@@ -238,6 +251,17 @@ export function useComposerVoice({
   })
 
   const liveConversation = useVoiceLiveConversation({
+    sessionId,
+    queueSessionKey,
+    taskRequest: async (action = 'snapshot', taskId?: string, text?: string): Promise<VoiceTaskSnapshot> => {
+      const sid = sessionId || acceptedVoiceSession.current
+      if (!sid) {return {task: null, history: [], pending: null}}
+      return requestForOwnedSession(sid, async <T,>(method: string, params?: Record<string, unknown>) => {
+        const gateway = $gateway.get()
+        if (!gateway) {throw new Error('Hermes is disconnected; task status is unconfirmed')}
+        return gateway.request<T>(method, params)
+      }, 'voice.live', {session_id: sid, action, task_id: taskId, text: text || ''})
+    },
     activeToolLabel,
     beforeMicOpen: () => wakePauseBarrierRef.current ?? undefined,
     busy,
@@ -247,6 +271,7 @@ export function useComposerVoice({
     onInterrupt,
     onStopWord: () => setVoiceConversationActive(false),
     onSubmit: submitLiveDelegation,
+    pendingFinalResponse: pendingResponse,
     pendingResponse: pendingTurnResponse,
     seedHistory: seedLiveHistory
   })
@@ -261,7 +286,7 @@ export function useComposerVoice({
     const status = $voiceLiveStatus.get()
     let live = false
 
-    if (selectedVoiceChatMode(status) === 'gpt-live') {
+    if (isLiveVoiceMode(selectedVoiceChatMode(status))) {
       if (status?.available) {
         live = true
       } else {
@@ -388,6 +413,10 @@ export function useComposerVoice({
     }
 
     const phrase = $voiceStopPhrase.get()
+    if (liveEngineActive && selectedVoiceChatMode($voiceLiveStatus.get()) === 'codex-live') {
+      notify({id: 'voice-stop-hint', kind: 'info', icon: 'mic', message: 'Stop talking silences speech. Cancel that task stops work. End the call closes voice.'})
+      return
+    }
 
     if (phrase) {
       notify({
@@ -397,7 +426,7 @@ export function useComposerVoice({
         message: t.notifications.voice.sayStopToEnd(phrase)
       })
     }
-  }, [t, voiceConversationActive])
+  }, [t, voiceConversationActive, liveEngineActive])
 
   useEffect(() => resumeWakeIfPaused, [resumeWakeIfPaused])
 

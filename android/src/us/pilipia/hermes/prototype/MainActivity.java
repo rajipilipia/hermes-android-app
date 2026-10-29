@@ -35,6 +35,7 @@ public final class MainActivity extends Activity {
  private BrowserPane browser;
  private NativeNotifications notifications;
  private NativeWork work;
+ private NativeVoiceCall voiceCall;
  private android.window.OnBackInvokedCallback backCallback;
  private byte[] lifecycleScript;
  private boolean currentPage(){return !destroyed&&web!=null&&NativeHostPolicy.isAppPage(web.getUrl());}
@@ -306,7 +307,7 @@ public final class MainActivity extends Activity {
   */
  public final class BrowserBridge {
   @JavascriptInterface public void request(String id,String operation,String value){
-   if(id==null||!id.matches("[0-9]{1,12}")||!("external".equals(operation)||"guest".equals(operation))||value==null||value.length()>8192)return;
+   if(id==null||!id.matches("[0-9]{1,12}")||!("external".equals(operation)||"guest".equals(operation))||value==null||value.length()>("guest".equals(operation)?3*1024*1024:8192))return;
    final long document=documentEpoch;
    runOnUiThread(()->{
     if(!currentPage()||document!=documentEpoch)return;
@@ -342,6 +343,8 @@ public final class MainActivity extends Activity {
  });}
  @Override public void onCreate(Bundle state) {
   super.onCreate(state);
+  // DEV PHONE ONLY: save this app's whole log to files on the phone (FileLog.java).
+  FileLog.start(getExternalFilesDir("logs"),android.os.Process.myPid());
   work=new NativeWork(new NativeWork.Driver(){
    public boolean start(){
     try{return startForegroundService(new Intent(MainActivity.this,ConnectionWorkService.class))!=null;}
@@ -349,6 +352,15 @@ public final class MainActivity extends Activity {
    }
    public void stop(){stopService(new Intent(MainActivity.this,ConnectionWorkService.class));}
   });
+  // Codex Live call: microphone foreground service only while the user's call runs.
+  voiceCall=new NativeVoiceCall(new NativeVoiceCall.Driver(){
+   public boolean start(){
+    try{return startForegroundService(new Intent(MainActivity.this,VoiceCallService.class))!=null;}
+    catch(RuntimeException denied){android.util.Log.w("HermesDiag","event=voice_call_service_rejected exception="+denied.getClass().getSimpleName());return false;}
+   }
+   public void stop(){stopService(new Intent(MainActivity.this,VoiceCallService.class));}
+  });
+  VoiceCallService.setOnEnd(this::endCallFromNotification);
   android.util.Log.d("HermesPrototype","event=activity_create");
   servers=new ServerStore(this);server=servers.load();
   NativeHostPolicy.useOrigin(server!=null?server:ServerOrigin.SETUP);
@@ -390,7 +402,7 @@ public final class MainActivity extends Activity {
    @Override public void onPageStarted(WebView view,String url,android.graphics.Bitmap favicon){
     // WebView emits this for main-document starts, not same-document hash routes.
     // Fence callbacks only: a trusted reload must retain native login credentials.
-    if(view==web&&!destroyed){documentEpoch++;android.util.Log.d("HermesPrototype","event=document_start document="+documentEpoch);if(work!=null)work.turn(false,false);if(notifications!=null)notifications.invalidate();if(chrome!=null)chrome.documentChanged();if(browser!=null)browser.destroyAll();}
+    if(view==web&&!destroyed){documentEpoch++;android.util.Log.d("HermesPrototype","event=document_start document="+documentEpoch);if(work!=null)work.turn(false,false);stopCall();if(notifications!=null)notifications.invalidate();if(chrome!=null)chrome.documentChanged();if(browser!=null)browser.destroyAll();}
    }
    @Override public void onPageFinished(WebView view,String url){
     if(view==web&&NativeHostPolicy.isAppPage(url)&&currentPage())lifecycle(foreground?"resume":"pause");
@@ -414,7 +426,7 @@ public final class MainActivity extends Activity {
     try {
      Map<String,String> headers=new HashMap<>();headers.put("Cache-Control","no-store");headers.put("X-Content-Type-Options","nosniff");headers.put("Referrer-Policy","no-referrer");
      // No untrusted HTML/preview frame may inherit the auth-privileged JavaScript interface.
-     headers.put("Content-Security-Policy","default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' wss: ws://localhost:* ws://127.0.0.1:* ws://10.0.2.2:*; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
+     headers.put("Content-Security-Policy","default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' wss: https://nousresearch.github.io ws://localhost:* ws://127.0.0.1:* ws://10.0.2.2:*; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'none'; form-action 'none'");
      headers.put("X-Frame-Options","DENY");
      headers.put("Permissions-Policy","microphone=(self), camera=(), geolocation=()");
      java.io.InputStream asset;
@@ -439,6 +451,7 @@ public final class MainActivity extends Activity {
    public android.view.ViewGroup container(){return container;}
    public String notification(String operation,JSONObject payload){return currentPage()&&notifications!=null?notifications.request(operation,payload,activePage()):"{\"ok\":false}";}
    public boolean work(boolean active){return currentPage()&&work!=null&&work.turn(active,activePage());}
+   public boolean call(boolean active){return currentPage()&&voiceCall(active);}
   });
   web.setWebChromeClient(chrome);
   container.addView(web,new FrameLayout.LayoutParams(-1,-1));
@@ -467,6 +480,39 @@ public final class MainActivity extends Activity {
  }
  private void lifecycle(String state){
   if(currentPage())web.evaluateJavascript("window.__hermesNativeLifecycle&&window.__hermesNativeLifecycle("+JSONObject.quote(state)+")",null);
+ }
+ /** Page report: a Codex Live call opened (true) or ended for any reason (false). UI thread. */
+ private boolean voiceCall(boolean active){
+  if(voiceCall==null)return false;
+  if(!active){stopCall();return true;}
+  boolean was=voiceCall.active();
+  boolean ok=voiceCall.set(true,foreground);
+  android.util.Log.i("HermesDiag","event=voice_call active=true ok="+ok+" foreground="+foreground);
+  if(ok&&!was){
+   // The page must keep running while the screen is off: a renderer whose priority is waived when
+   // not visible was frozen, so heartbeats stopped and the call's tasks waited for the next unlock.
+   if(web!=null){savedRendererPriority=web.getRendererRequestedPriority();savedRendererWaived=web.getRendererPriorityWaivedWhenNotVisible();web.setRendererPriorityPolicy(WebView.RENDERER_PRIORITY_IMPORTANT,false);}
+   lifecycle("call-on");
+  }
+  return ok;
+ }
+ private int savedRendererPriority=-1;
+ private boolean savedRendererWaived;
+ /** Mic service off and the normal pause rules back, at once. Safe to call when no call runs. */
+ private void stopCall(){
+  if(voiceCall==null||!voiceCall.active())return;
+  voiceCall.reset();
+  if(web!=null&&savedRendererPriority>=0){web.setRendererPriorityPolicy(savedRendererPriority,savedRendererWaived);savedRendererPriority=-1;}
+  android.util.Log.i("HermesDiag","event=voice_call active=false foreground="+foreground);
+  lifecycle("call-off");
+  // onPause skipped web.onPause() for the call; do it now if Hermes is still in the background.
+  if(!foreground&&web!=null)web.onPause();
+ }
+ /** The notification End action: ask the page to end the call, then drop the mic at once. */
+ private void endCallFromNotification(){
+  if(destroyed||voiceCall==null||!voiceCall.active())return;
+  if(currentPage())web.evaluateJavascript("window.dispatchEvent(new Event('hermes:android-voice-end'))",null);
+  stopCall();
  }
  @Override protected void onNewIntent(Intent intent){
   super.onNewIntent(intent);
@@ -526,7 +572,7 @@ public final class MainActivity extends Activity {
   if(chrome!=null&&chrome.onRequestPermissionsResult(requestCode,permissions,grants))return;
   super.onRequestPermissionsResult(requestCode,permissions,grants);
  }
- @Override protected void onPause(){android.util.Log.d("HermesPrototype","event=activity_pause");synchronized(foregroundLock){foreground=false;foregroundEpoch++;}lifecycle("pause");if(chrome!=null)chrome.pause();super.onPause();if(web!=null)web.onPause();if(browser!=null)browser.pause();}
+ @Override protected void onPause(){android.util.Log.d("HermesPrototype","event=activity_pause");synchronized(foregroundLock){foreground=false;foregroundEpoch++;}lifecycle("pause");if(chrome!=null)chrome.pause();super.onPause();if(web!=null&&!(voiceCall!=null&&voiceCall.active()))web.onPause();if(browser!=null)browser.pause();}
  @Override protected void onResume(){super.onResume();android.util.Log.d("HermesPrototype","event=activity_resume");if(web!=null)web.onResume();if(browser!=null)browser.resume();synchronized(foregroundLock){foreground=true;foregroundLock.notifyAll();}if(work!=null)work.resume();if(chrome!=null)chrome.resume();if(notifications!=null)notifications.resume();lifecycle("resume");if(activePage())web.evaluateJavascript("window.dispatchEvent(new Event('hermes:notification-tap'))",null);}
- @Override protected void onDestroy(){android.util.Log.d("HermesPrototype","event=activity_destroy");lifecycle("pause");destroyed=true;synchronized(foregroundLock){foregroundLock.notifyAll();}if(work!=null)work.close();if(notifications!=null)notifications.destroy();if(chrome!=null)chrome.destroy();if(browser!=null)browser.destroyAll();if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);authEpoch++;if(auth!=null)auth.close();authWorker.shutdownNow();probeWorker.shutdownNow();apiWorker.shutdownNow();if(web!=null){web.removeJavascriptInterface("HermesPc");web.removeJavascriptInterface("HermesServer");web.removeJavascriptInterface("HermesApi");web.removeJavascriptInterface("HermesBrowser");web.stopLoading();web.clearCache(true);web.destroy();web=null;}super.onDestroy();}
+ @Override protected void onDestroy(){android.util.Log.d("HermesPrototype","event=activity_destroy");stopCall();VoiceCallService.setOnEnd(null);if(voiceCall!=null)voiceCall.close();lifecycle("pause");destroyed=true;synchronized(foregroundLock){foregroundLock.notifyAll();}if(work!=null)work.close();if(notifications!=null)notifications.destroy();if(chrome!=null)chrome.destroy();if(browser!=null)browser.destroyAll();if(Build.VERSION.SDK_INT>=33&&backCallback!=null)getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(backCallback);authEpoch++;if(auth!=null)auth.close();authWorker.shutdownNow();probeWorker.shutdownNow();apiWorker.shutdownNow();if(web!=null){web.removeJavascriptInterface("HermesPc");web.removeJavascriptInterface("HermesServer");web.removeJavascriptInterface("HermesApi");web.removeJavascriptInterface("HermesBrowser");web.stopLoading();web.clearCache(true);web.destroy();web=null;}super.onDestroy();}
 }

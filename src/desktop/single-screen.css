@@ -11,12 +11,16 @@ html[data-android-compact] form[data-slot="composer-root"] {
   --composer-control-gap: 4px;
   --composer-control-size: 40px;
 }
-/* Text gets its own full-width row. Controls do not steal its typing space. */
-html[data-android-compact] form[data-slot="composer-root"] .grid:has(> [class*="grid-area:input"]) {
-  grid-template-columns: auto minmax(0, 1fr) !important;
-  grid-template-areas: "input input" "menu controls" !important;
-  column-gap: 4px !important;
-  row-gap: 6px !important;
+/* Text gets its own full-width row. Controls do not steal its typing space.
+   Narrow (portrait) only: a sideways phone has the width for Desktop's one-row composer, and
+   with the keyboard up two rows left no readable chat (new Desktop composer is taller). */
+@media (max-width: 639.98px) {
+  html[data-android-compact] form[data-slot="composer-root"] .grid:has(> [class*="grid-area:input"]) {
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    grid-template-areas: "input input" "menu controls" !important;
+    column-gap: 4px !important;
+    row-gap: 6px !important;
+  }
 }
 html[data-android-compact] [data-slot="composer-rich-input"] {
   max-height: min(160px, calc(var(--android-visible-height, 100dvh) * .28)) !important;
@@ -68,18 +72,29 @@ html[data-android-compact] [data-overlay-surface] {
 }
 html[data-android-compact] [data-narrow-overlay] {
   max-width: calc(100vw - 16px) !important;
+  /* Terminal declares no width; its docked bottom zone gave the slide-over about 27px. 20rem also fits
+     the drawer's three tabs (Sessions, Bots, Terminal) without cutting off the last one. */
+  min-width: min(20rem, calc(100vw - 48px));
+}
+/* A right-side slide-over shares the top row with the titlebar's Settings and right-panel icons:
+   keep its tabs left of them (the left drawer keeps the left toggle clear the same way). */
+html[data-android-compact] [data-narrow-overlay].right-0 [role="tablist"] {
+  padding-left: 0 !important;
+  padding-right: 64px !important;
 }
 html[data-android-compact] [data-zone-tabstrip] {
   min-width: 0;
 }
-html[data-android-compact] [data-zone-tabstrip] button[aria-label="New session tab"] {
+html[data-android-compact] [data-zone-tabstrip] :is(button[aria-label="New session tab"], button[aria-label="New tab"]) {
   min-width: 32px;
   min-height: 32px;
   flex-shrink: 0;
 }
 html[data-android-compact] footer[data-slot="statusbar"] {
   min-width: 0;
-  overflow: hidden;
+  /* Clip sideways only: the items' 40px hit area (below) grows upward out of the 28px bar. */
+  overflow-x: clip;
+  overflow-y: visible;
   gap: 4px;
   padding-left: max(4px, env(safe-area-inset-left));
   padding-right: max(4px, env(safe-area-inset-right));
@@ -87,7 +102,10 @@ html[data-android-compact] footer[data-slot="statusbar"] {
 /* Expanded touch pseudo-elements caused a vertical scrollbar inside the footer.
    Their real controls stay intact; no rule applies to an unfolded Fold. */
 html[data-android-compact] footer[data-slot="statusbar"] button::after {
-  inset: 0 !important;
+  inset: -14px 0 0 !important; /* 28px bar + 14px upward = 42px; the composer controls keep the 8px above that */
+}
+html[data-android-compact] footer[data-slot="statusbar"] button[data-android-statusbar-item="command-center"]::after {
+  inset: -14px -1px 0 -4px !important; /* 28px wide icon: its free room is the screen edge (4px) and the 2px gap */
 }
 html[data-android-compact] [data-android-statusbar-cluster="left"] {
   flex: 1 1 0;
@@ -105,15 +123,21 @@ html[data-android-compact] [data-android-statusbar-item="approval-mode"] {
 html[data-android-compact] [data-android-statusbar-item="workspace-cwd"] {
   flex: 0 1000 auto;
   min-width: 26px;
-  overflow: hidden;
+  overflow-x: clip; /* sideways only: the 40px hit area grows upward */
+  overflow-y: visible;
 }
 html[data-android-compact] [data-android-statusbar-item="gateway-health"] {
   flex: 0 1 auto;
   min-width: 26px;
-  overflow: hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 html[data-android-compact] [data-android-statusbar-item] > svg {
   flex-shrink: 0;
+}
+html[data-android-compact] footer :is([data-slot="profile-switcher"], [data-slot="profile-switcher"] > button) {
+  overflow-x: clip;
+  overflow-y: visible;
 }
 html[data-android-compact] footer [data-slot="profile-switcher"] {
   flex: 0 0.001 auto;
@@ -155,4 +179,200 @@ html[data-android-compact] [data-chat-surface] img {
   html[data-android-compact] [data-slot="composer-rich-input"] {
     max-height: min(96px, calc(var(--android-visible-height, 100dvh) * .25)) !important;
   }
+}
+/* Landscape phone: menus and popovers open above the fixed titlebar (it covered the effort menu).
+   Their height already fits the visible area (max-height rule above). */
+@media (orientation: landscape) {
+  html[data-android-compact] [data-radix-popper-content-wrapper] {
+    z-index: 90 !important;
+  }
+}
+/* Text is at least 12px on the single-screen phone (the author, 2026-10-28). These are Desktop's small
+   text utilities (text-[0.6875rem], text-[10px], ...); sizes of 12px or more are not listed. */
+html[data-android-compact] :is(
+  [class*="text-[0.4"], [class*="text-[0.5"], [class*="text-[0.6"],
+  [class*="text-[0.7rem"], [class*="text-[0.72rem"], [class*="text-[0.73rem"], [class*="text-[0.74rem"],
+  [class*="text-[9px"], [class*="text-[10px"], [class*="text-[11px"]
+) {
+  font-size: 0.75rem;
+}
+/* Menu rows size their text with a variable (text-[length:var(--conversation-tool-font-size)], 11px):
+   the composer "+" menu (Files, Folder, ...) and similar. Raise to 12px, never lower. */
+html[data-android-compact] :is(
+  [data-slot="dropdown-menu-content"], [data-slot="dropdown-menu-sub-content"],
+  [data-slot="popover-content"], [data-slot="select-content"]
+) [class*="--conversation-tool-font-size"] {
+  font-size: max(0.75rem, var(--conversation-tool-font-size));
+}
+
+/* ---- Android 48dp tap targets (the author, 2026-10-28) ----
+   Invisible ::after areas, no visual change. Each control gets 48px where its neighbours leave room.
+   Where neighbours touch, each control keeps the largest area that does not overlap another one
+   (the limit is noted per rule). tests/browser/phone-audit.mjs measures all of them. The unfolded
+   Fold (no data-android-compact) is unchanged. */
+
+/* Titlebar: top of the screen, so the area grows downward (y 0..48). */
+html[data-android-compact] [data-titlebar-cluster] [data-size="icon-titlebar"]::after {
+  inset: -5px 0 -19px;
+}
+/* An open drawer starts its list at y=34 under the toggle; keep the old 40px there. */
+html[data-android-compact] body:has([data-narrow-overlay]) [data-titlebar-cluster] [data-size="icon-titlebar"]::after {
+  inset: -5px 0 -11px;
+}
+@media (max-width: 639.98px) {
+  /* Left toggle: 14px to the screen edge, 12px to the tab (x=50). */
+  html[data-android-compact] [data-titlebar-cluster="left"] [data-size="icon-titlebar"]::after {
+    inset: -5px -12px -19px;
+  }
+  /* Right icons sit side by side (24px pitch): width cannot grow between them. Only the last one has
+     room: it grows to the screen edge (+12 = 36). Settings stays 24 wide: with many tabs the tab strip
+     "+" touches it, and a wider Settings area would take the "+" taps. */
+  html[data-android-compact] [data-titlebar-cluster="right"] [data-size="icon-titlebar"]:last-child::after {
+    inset: -5px -12px -19px 0;
+  }
+  html[data-android-compact] body:has([data-narrow-overlay]) [data-titlebar-cluster="left"] [data-size="icon-titlebar"]::after {
+    inset: -5px -12px -11px;
+  }
+  html[data-android-compact] body:has([data-narrow-overlay]) [data-titlebar-cluster="right"] [data-size="icon-titlebar"]:last-child::after {
+    inset: -5px -12px -11px 0;
+  }
+}
+
+/* Tab strip is 34px tall and clips its children: that height is the limit. "+" grows 16px to the right
+   (48 wide) when there is room; with many tabs it touches Settings, which is painted on top and keeps its
+   own area. The tab Close button grows left into the title (36 wide). */
+html[data-android-compact] [data-zone-tabstrip] :is(button[aria-label="New session tab"], button[aria-label="New tab"])::after {
+  inset: -1px -16px -1px 0 !important;
+}
+html[data-android-compact] [data-slot="pane-tab"] button[aria-label="Close"]::after {
+  inset: 0 0 0 -12px;
+}
+
+/* Composer controls (40px, 4px gaps). The row has 6px free above it and 16px below it (status bar);
+   2px go below, 6px above: 48 tall. Widths share the 4px gaps: "+" 48, Model fills, Effort 50, Voice 48,
+   Send/Start voice 42 (the card edge clips it). */
+html[data-android-compact] form[data-slot="composer-root"] :is(
+  button[aria-label="Add context"], button[aria-label^="Model"], button[aria-label^="Effort"],
+  button[aria-label="Voice"], button[aria-label="Voice dictation"],
+  button[aria-label="Start voice conversation"], button[type="submit"]
+) {
+  position: relative;
+}
+html[data-android-compact] form[data-slot="composer-root"] :is(
+  button[aria-label="Add context"], button[aria-label^="Model"], button[aria-label^="Effort"],
+  button[aria-label="Voice"], button[aria-label="Voice dictation"],
+  button[aria-label="Start voice conversation"], button[type="submit"]
+)::after {
+  content: "";
+  position: absolute;
+}
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label="Add context"]::after {
+  inset: -7px -4px -1px -4px !important;
+}
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label^="Model"]::after {
+  inset: -6px 0 -2px !important;
+}
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label^="Effort"]::after {
+  inset: -6px 0 -2px -4px !important;
+}
+html[data-android-compact] form[data-slot="composer-root"] :is(button[aria-label="Voice"], button[aria-label="Voice dictation"])::after {
+  inset: -6px -4px -2px -4px !important;
+}
+html[data-android-compact] form[data-slot="composer-root"] :is(button[aria-label="Start voice conversation"], button[type="submit"])::after {
+  inset: -9px -14px -5px 0 !important; /* 34px button in the 40px row */
+}
+/* The voice engine arrow sits right after the call button: the call area must not cover it. */
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label="Start voice conversation"]:has(+ button[aria-label="Voice chat engine"])::after {
+  right: 0 !important;
+}
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label="Voice chat engine"] {
+  position: relative;
+}
+html[data-android-compact] form[data-slot="composer-root"] button[aria-label="Voice chat engine"]::after {
+  content: "";
+  position: absolute;
+  inset: -4px -14px -4px 0;
+}
+
+/* Tool and thinking rows: the start-end time stamp is about 285px wide and does not shrink. On a phone it
+   squeezed the tool name to 0px and the tool summary painted under it; the stamp now takes a second line. */
+html[data-android-compact] .group\/disclosure-row {
+  flex-wrap: wrap;
+}
+
+/* Sessions drawer: rows are 41px apart, so 41 is the tallest area that does not touch the next row. */
+html[data-android-compact] button[aria-label="Session actions"]::after {
+  inset: -10px -8px -11px -20px;
+}
+html[data-android-compact] span[aria-label^="Reorder"] {
+  overflow: visible; /* Desktop clips the 14px handle; the touch area below must not be clipped */
+}
+html[data-android-compact] span[aria-label^="Reorder"]::after {
+  content: "";
+  position: absolute;
+  inset: -14px -6px -13px -16px; /* 14px handle: the row title starts 6px to the right */
+}
+/* Sidebar footer: 40px band (2px over the list bottom) between the session list and the status bar. */
+html[data-android-compact] [data-slot="profile-rail"] button::after {
+  inset: -12px 0 -4px;
+}
+html[data-android-compact] [data-slot="profile-rail"] button:not([aria-label="New profile"]):not([aria-label^="Import profile"]):not([aria-label^="Manage profiles"]):not([aria-label^="Manage gateways"])::after {
+  inset: -12px -12px -4px; /* profile avatar: alone on the left */
+}
+html[data-android-compact] [data-slot="profile-rail"] :is(button[aria-label="New profile"], button[aria-label^="Import profile"])::after {
+  inset: -14px 0 -6px; /* 20px icons */
+}
+html[data-android-compact] [data-slot="profile-rail"] button[aria-label="New profile"]::after {
+  inset: -14px -1px -6px -26px; /* free room on its left */
+}
+
+/* Command Center session rows: Pin / Export / Delete icons sit 26px apart, so the middle one is
+   26 wide; Pin grows left (to the title), Delete grows right (to the page padding). Rows are 53px apart. */
+html[data-android-compact] li button:is(
+  [aria-label="Pin session"], [title="Pin session"], [aria-label="Unpin session"], [title="Unpin session"],
+  [aria-label="Export session"], [title="Export session"], [aria-label="Delete session"], [title="Delete session"]
+) {
+  position: relative;
+}
+html[data-android-compact] li button:is(
+  [aria-label="Pin session"], [title="Pin session"], [aria-label="Unpin session"], [title="Unpin session"],
+  [aria-label="Export session"], [title="Export session"], [aria-label="Delete session"], [title="Delete session"]
+)::after {
+  content: "";
+  position: absolute;
+  inset: -12px -1px;
+}
+html[data-android-compact] li button:is([aria-label="Pin session"], [title="Pin session"], [aria-label="Unpin session"], [title="Unpin session"])::after {
+  inset: -12px -1px -12px -8px;
+}
+html[data-android-compact] li button:is([aria-label="Delete session"], [title="Delete session"])::after {
+  inset: -12px -22px -12px -1px;
+}
+
+/* Small Desktop controls that had no touch area at all. */
+html[data-android-compact] :is(
+  button[aria-label="Dismiss notification"],
+  nav[aria-label] > button[data-size="inline"],
+  [data-slot="dropdown-menu-content"] [role="switch"]
+) {
+  position: relative;
+}
+html[data-android-compact] :is(
+  button[aria-label="Dismiss notification"],
+  nav[aria-label] > button[data-size="inline"],
+  [data-slot="dropdown-menu-content"] [role="switch"]
+)::after {
+  content: "";
+  position: absolute;
+}
+html[data-android-compact] button[aria-label="Dismiss notification"]::after {
+  inset: -12px;
+}
+/* Settings breadcrumb (16px tall): the title row is 9px above, text below. */
+html[data-android-compact] nav[aria-label] > button[data-size="inline"]::after {
+  inset: -8px -6px -24px;
+}
+/* Thinking / Fast switch (28x16) inside a 40px menu row: 12px up and down fills the row, no more. */
+html[data-android-compact] [data-slot="dropdown-menu-content"] [role="switch"]::after {
+  inset: -12px -10px;
 }

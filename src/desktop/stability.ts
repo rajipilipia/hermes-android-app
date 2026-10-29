@@ -1,7 +1,7 @@
 // Connection stability diagnostics for phone rounds (NG-4, 2026-10-20). Observe only: nothing
 // here changes when or how the renderer connects. Lines go through diag() (logcat HermesDiag)
 // and carry counts, codes and milliseconds only, never the URL, ticket or close reason text.
-import { diag } from "./diag";
+import { diag, full } from "./diag";
 
 const GATEWAY_PATH = "/api/ws";
 const SUMMARY_MS = 5 * 60_000;
@@ -25,6 +25,7 @@ export function installSocketDiag(win: Window & typeof globalThis = window, now:
     const id = ++next;
     const started = now();
     let opened: number | undefined;
+    trackRpc(socket, id, now);
     socket.addEventListener("open", () => {
       opened = now();
       counters.opens++;
@@ -68,6 +69,66 @@ export function installSocketDiag(win: Window & typeof globalThis = window, now:
       win.clearInterval(summary);
     },
   };
+}
+
+const RPC_SUMMARY_MS = 10_000;
+// Frame head only: ids, method names, error codes and event types sit near the start.
+const HEAD = 400;
+const pick = (head: string, pattern: RegExp) => pattern.exec(head)?.[1];
+
+/** Verbose RPC log for one gateway socket: each request as "rpc method ms ok|error code", each
+ *  event type as a 10 s count summary. Reads the frame head with patterns instead of parsing it
+ *  again. DEV PHONE: every frame is also logged in full ("[hermes-full] ws_out/ws_in", secrets
+ *  masked, cut to one logcat entry); the app's file log saves it on the phone. */
+export function trackRpc(socket: WebSocket, ws: number, now: () => number = () => Date.now()) {
+  const pending = new Map<string, { method: string; at: number }>();
+  let events: Record<string, number> = {};
+  if (typeof socket.send !== "function") return;
+  const send = socket.send.bind(socket);
+  socket.send = (data: Parameters<WebSocket["send"]>[0]) => {
+    if (typeof data === "string") {
+      full(`ws_out ws=${ws}`, data);
+      const head = data.slice(0, HEAD);
+      const rid = pick(head, /"id"\s*:\s*"?([\w-]{1,64})"?/);
+      const method = pick(head, /"method"\s*:\s*"([\w.\-/]{1,64})"/);
+      if (rid && method) pending.set(rid, { method, at: now() });
+    }
+    send(data);
+  };
+  socket.addEventListener("message", (event: MessageEvent) => {
+    if (typeof event.data !== "string") return;
+    full(`ws_in ws=${ws}`, event.data);
+    const head = event.data.slice(0, HEAD);
+    const method = pick(head, /"method"\s*:\s*"([\w.\-/]{1,64})"/);
+    if (method) {
+      const type = method === "event" ? pick(head, /"type"\s*:\s*"([\w.\-]{1,64})"/) ?? "unknown" : method;
+      events[type] = (events[type] ?? 0) + 1;
+      return;
+    }
+    const rid = pick(head, /"id"\s*:\s*"?([\w-]{1,64})"?/);
+    const request = rid === undefined ? undefined : pending.get(rid);
+    if (!request || rid === undefined) return;
+    pending.delete(rid);
+    // A top-level "error" comes before any "result"; a nested "error" inside a result is data.
+    const errorAt = head.indexOf('"error"');
+    const resultAt = head.indexOf('"result"');
+    const failed = errorAt >= 0 && (resultAt < 0 || errorAt < resultAt);
+    const code = failed ? pick(head.slice(errorAt, errorAt + 80), /"code"\s*:\s*(-?\d{1,6})/) ?? "?" : undefined;
+    diag("rpc", { ws, method: request.method, ms: now() - request.at, ok: code === undefined, code });
+  });
+  const flush = () => {
+    const entries = Object.entries(events);
+    if (!entries.length) return;
+    diag("rpc_events", { ws, ...Object.fromEntries(entries.slice(0, 20)), types: entries.length });
+    events = {};
+  };
+  const timer = setInterval(flush, RPC_SUMMARY_MS);
+  socket.addEventListener("close", () => {
+    flush();
+    clearInterval(timer);
+    if (pending.size) diag("rpc_unanswered", { ws, count: pending.size, methods: [...new Set([...pending.values()].map(p => p.method))].slice(0, 5).join(",") });
+    pending.clear();
+  });
 }
 
 type Readable<T> = { get(): T; listen(listener: (value: T) => void): () => void };

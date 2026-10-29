@@ -16,8 +16,8 @@ print(json.dumps({profile: eval(expression, {"__builtins__": {}}, {"profile": pr
                   for profile in ("phone", "fold")}))
 `, resolve("scripts/android-lab.py")], { encoding: "utf8" })) as Record<string, string>;
 
-it("uses an on-screen keyboard for the isolated phone emulator", () => {
-  expect(values.phone).toBe("no");
+it("enables the PC keyboard setting for the isolated phone emulator", () => {
+  expect(values.phone).toBe("yes");
 });
 
 it("preserves the existing fold emulator keyboard policy", () => {

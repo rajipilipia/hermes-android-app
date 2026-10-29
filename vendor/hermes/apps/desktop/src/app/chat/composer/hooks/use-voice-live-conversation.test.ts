@@ -125,6 +125,16 @@ describe('Voice-live toast copy', () => {
 })
 
 describe('GPT-Live delegation → Hermes turn', () => {
+  it('keeps consecutive Codex turns separate and submits only the latest user turn', () => {
+    const { prompt, context } = delegationPrompt([
+      { turnId: 'one', speaker: 'user', text: 'Run tests.', startMs: 0, endMs: 1 },
+      { turnId: 'two', speaker: 'user', text: 'Check the logs instead.', startMs: 2, endMs: 3 }
+    ])
+
+    expect(prompt).toBe('Check the logs instead.')
+    expect(context).toBe('User: Run tests.\nUser: Check the logs instead.')
+  })
+
   it('sends the latest user words as the turn and the exchange as model-only context', () => {
     // The delegation event carries no text: both are reconstructed from
     // transcript deltas, fragments of one speaker concatenated as received.

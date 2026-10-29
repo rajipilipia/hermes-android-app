@@ -24,6 +24,7 @@ it("keeps mandatory controls and shrinks project text before backend text only o
   }
   expect(css).toMatch(/workspace-cwd[^}]*flex:\s*0 1000 auto/);
   expect(css).toMatch(/gateway-health[^}]*flex:\s*0 1 auto/);
-  expect(css).toMatch(/footer\[data-slot="statusbar"\][^{]*\{[^}]*overflow:\s*hidden/);
-  expect(css).toMatch(/statusbar"\] button::after[^}]*inset:\s*0/);
+  // Sideways clip only: the 40px hit area of each item grows 12px upward out of the 28px bar (0.3.1, F8).
+  expect(css).toMatch(/footer\[data-slot="statusbar"\][^{]*\{[^}]*overflow-x:\s*clip;[^}]*overflow-y:\s*visible/);
+  expect(css).toMatch(/statusbar"\] button::after[^}]*inset:\s*-14px 0 0 !important/);
 });

@@ -3,7 +3,6 @@ import { resolveGatewayWsUrl } from '@hermes/shared'
 import type { OwnerScope } from '@/api/client'
 import { getApiRequestConnection, getApiRequestProfile, speakText } from '@/hermes'
 import { directTtsConfig, type DirectTtsConfig, synthesizeSpeechClientDirect } from '@/lib/voice-client-direct'
-import { getAndroidMedia } from '@/lib/android-media'
 import { RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 import {
   $voicePlayback,
@@ -127,13 +126,6 @@ export function stopVoicePlayback() {
 /** Exported for tests: the (connection, profile) routing contract below is
  *  exactly what broke in the desktop-remote voice report — keep it pinned. */
 export async function resolveSpeakStreamUrl(owner?: OwnerScope): Promise<null | string> {
-  // Android's reviewed media transport is finite, non-streaming relay only.
-  // Do not remap a native authenticated ticket to an unaudited sibling route;
-  // returning null selects the original whole-text speakText fallback.
-  if (getAndroidMedia()) {
-    return null
-  }
-
   const desktop = window.hermesDesktop
 
   if (!desktop?.getConnection) {

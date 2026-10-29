@@ -18,7 +18,7 @@
     "PUT /api/learning/node",
     "PUT /api/skills/toggle"
   ],
-  "sourceCommit": "93ac19694ea0c4cc1e1661ff37c2a171d96a1bc0",
+  "sourceCommit": "925ede7741ffbbde27b50ce6b1903465302e2576",
   "transport": "authenticated upstream /api/ws JSON-RPC",
   "rpcMethod": "desktop.call",
   "requiredFields": [
@@ -415,7 +415,7 @@
     "lifecycle": "Exact principal/profile/socket owner. Fixed TTL, no refresh. Complete consumes once; never retry uncertain writes. Release cancels pending work but keeps quota/handles/barrier through original settlement. Disconnect, expiry and shutdown cancel; temp files close after settlement. Completed attachments/workspace files are durable.",
     "credentials": "No URL, method, headers, identity, provider key, client-direct lease or bearer URL is accepted or returned."
   },
-  "operationCount": 69,
+  "operationCount": 79,
   "operations": [
     {
       "id": "GET /api/profiles",
@@ -444,8 +444,8 @@
       "body": null,
       "sourceHandler": "list_profiles_endpoint",
       "sourceLines": [
-        807,
-        808
+        808,
+        809
       ]
     },
     {
@@ -475,8 +475,8 @@
       "body": null,
       "sourceHandler": "get_active_profile_endpoint",
       "sourceLines": [
-        885,
-        902
+        886,
+        903
       ]
     },
     {
@@ -506,8 +506,8 @@
       "body": null,
       "sourceHandler": "get_status",
       "sourceLines": [
-        467,
-        566
+        483,
+        582
       ]
     },
     {
@@ -541,8 +541,8 @@
       "body": null,
       "sourceHandler": "get_config",
       "sourceLines": [
-        81,
-        91
+        91,
+        101
       ]
     },
     {
@@ -572,8 +572,8 @@
       "body": null,
       "sourceHandler": "get_defaults",
       "sourceLines": [
-        95,
-        96
+        105,
+        106
       ]
     },
     {
@@ -603,8 +603,8 @@
       "body": null,
       "sourceHandler": "get_schema",
       "sourceLines": [
-        100,
-        106
+        110,
+        117
       ]
     },
     {
@@ -634,8 +634,8 @@
       "body": null,
       "sourceHandler": "get_env_vars",
       "sourceLines": [
-        260,
-        263
+        279,
+        282
       ]
     },
     {
@@ -665,8 +665,8 @@
       "body": null,
       "sourceHandler": "fs_default_cwd",
       "sourceLines": [
-        982,
-        992
+        1001,
+        1011
       ]
     },
     {
@@ -730,7 +730,11 @@
       },
       "query": {
         "type": "object",
-        "properties": {},
+        "properties": {
+          "preserve_language": {
+            "type": "boolean"
+          }
+        },
         "required": [],
         "additionalProperties": false
       },
@@ -762,6 +766,9 @@
                     "type": "boolean"
                   },
                   "compact": {
+                    "type": "boolean"
+                  },
+                  "resume_last_session": {
                     "type": "boolean"
                   }
                 },
@@ -828,6 +835,43 @@
                 },
                 "required": [],
                 "additionalProperties": false
+              },
+              "desktop": {
+                "type": "object",
+                "properties": {
+                  "font_family": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "terminal": {
+                "type": "object",
+                "properties": {
+                  "font_family": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
+              },
+              "sessions": {
+                "type": "object",
+                "properties": {
+                  "auto_archive": {
+                    "type": "boolean"
+                  },
+                  "auto_archive_days": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 3650
+                  }
+                },
+                "required": [],
+                "additionalProperties": false
               }
             },
             "required": [],
@@ -841,8 +885,72 @@
       },
       "sourceHandler": "update_config",
       "sourceLines": [
-        118,
-        156
+        129,
+        175
+      ]
+    },
+    {
+      "id": "POST /api/model/set",
+      "method": "POST",
+      "pathTemplate": "/api/model/set",
+      "source": "hermes_cli/web_routers/models.py",
+      "permission": "settings.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "scope": {
+            "type": "string",
+            "maxLength": 16,
+            "enum": [
+              "main",
+              "auxiliary"
+            ]
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 128
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 256
+          },
+          "task": {
+            "type": "string",
+            "maxLength": 64
+          },
+          "confirm_expensive_model": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "scope",
+          "provider",
+          "model"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "set_model_assignment",
+      "sourceLines": [
+        377,
+        427
       ]
     },
     {
@@ -879,8 +987,8 @@
       "body": null,
       "sourceHandler": "fs_list",
       "sourceLines": [
-        763,
-        789
+        771,
+        797
       ]
     },
     {
@@ -917,8 +1025,8 @@
       "body": null,
       "sourceHandler": "fs_read_text",
       "sourceLines": [
-        793,
-        831
+        801,
+        840
       ]
     },
     {
@@ -962,8 +1070,8 @@
       "body": null,
       "sourceHandler": "fs_read_data_url",
       "sourceLines": [
-        908,
-        930
+        927,
+        949
       ]
     },
     {
@@ -1000,8 +1108,8 @@
       "body": null,
       "sourceHandler": "fs_git_root",
       "sourceLines": [
-        965,
-        978
+        984,
+        997
       ]
     },
     {
@@ -1045,8 +1153,8 @@
       "body": null,
       "sourceHandler": "fs_download",
       "sourceLines": [
-        934,
-        961
+        953,
+        980
       ]
     },
     {
@@ -1095,8 +1203,8 @@
       },
       "sourceHandler": "fs_write_text",
       "sourceLines": [
-        835,
-        888
+        844,
+        897
       ]
     },
     {
@@ -1142,8 +1250,8 @@
       },
       "sourceHandler": "create_managed_directory",
       "sourceLines": [
-        722,
-        728
+        730,
+        736
       ]
     },
     {
@@ -1195,8 +1303,55 @@
       },
       "sourceHandler": "upload_managed_file",
       "sourceLines": [
-        647,
-        653
+        655,
+        661
+      ]
+    },
+    {
+      "id": "POST /api/chat/image-upload",
+      "method": "POST",
+      "pathTemplate": "/api/chat/image-upload",
+      "source": "hermes_cli/web_routers/files.py",
+      "permission": "files.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "data_url": {
+            "type": "string",
+            "maxLength": 3145728
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 255
+          }
+        },
+        "required": [
+          "data_url"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "upload_chat_image",
+      "sourceLines": [
+        478,
+        512
       ]
     },
     {
@@ -1271,8 +1426,8 @@
       "body": null,
       "sourceHandler": "get_sessions",
       "sourceLines": [
-        178,
-        271
+        183,
+        273
       ]
     },
     {
@@ -1324,8 +1479,8 @@
       "body": null,
       "sourceHandler": "search_sessions",
       "sourceLines": [
-        285,
-        461
+        287,
+        463
       ]
     },
     {
@@ -1363,8 +1518,8 @@
       "body": null,
       "sourceHandler": "get_session_detail",
       "sourceLines": [
-        563,
-        582
+        561,
+        583
       ]
     },
     {
@@ -1427,8 +1582,8 @@
       "body": null,
       "sourceHandler": "get_session_messages",
       "sourceLines": [
-        724,
-        767
+        740,
+        783
       ]
     },
     {
@@ -1477,8 +1632,8 @@
       "body": null,
       "sourceHandler": "get_session_timeline",
       "sourceLines": [
-        786,
-        804
+        802,
+        820
       ]
     },
     {
@@ -1529,8 +1684,8 @@
       "body": null,
       "sourceHandler": "get_session_messages_around",
       "sourceLines": [
-        808,
-        827
+        824,
+        843
       ]
     },
     {
@@ -1583,6 +1738,26 @@
           },
           "unread": {
             "type": "boolean"
+          },
+          "request_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expected_generation": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "profile": {
+            "type": "string",
+            "pattern": "^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$",
+            "maxLength": 64
           }
         },
         "required": [],
@@ -1590,8 +1765,102 @@
       },
       "sourceHandler": "rename_session_endpoint",
       "sourceLines": [
-        893,
-        922
+        927,
+        934
+      ]
+    },
+    {
+      "id": "GET /api/sessions/{session_id}/mutation-snapshot",
+      "method": "GET",
+      "pathTemplate": "/api/sessions/{session_id}/mutation-snapshot",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_session_mutation_snapshot",
+      "sourceLines": [
+        587,
+        598
+      ]
+    },
+    {
+      "id": "DELETE /api/sessions/{session_id}",
+      "method": "DELETE",
+      "pathTemplate": "/api/sessions/{session_id}",
+      "source": "hermes_cli/web_routers/sessions.py",
+      "permission": "sessions.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "session_id": {
+            "type": "string",
+            "pattern": "^(?!empty$)[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "session_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "expected_generation": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "delete_session_endpoint",
+      "sourceLines": [
+        847,
+        875
       ]
     },
     {
@@ -1672,7 +1941,7 @@
       "sourceHandler": "get_profiles_sessions",
       "sourceLines": [
         454,
-        511
+        518
       ]
     },
     {
@@ -1731,8 +2000,8 @@
       "body": null,
       "sourceHandler": "get_profiles_sessions_sidebar",
       "sourceLines": [
-        516,
-        654
+        523,
+        650
       ]
     },
     {
@@ -1778,8 +2047,8 @@
       },
       "sourceHandler": "transcribe_audio_upload",
       "sourceLines": [
-        84,
-        143
+        87,
+        146
       ]
     },
     {
@@ -1821,8 +2090,8 @@
       },
       "sourceHandler": "speak_text",
       "sourceLines": [
-        293,
-        346
+        320,
+        373
       ]
     },
     {
@@ -1871,8 +2140,8 @@
       },
       "sourceHandler": "stt_lease",
       "sourceLines": [
-        482,
-        512
+        509,
+        539
       ]
     },
     {
@@ -1921,8 +2190,8 @@
       },
       "sourceHandler": "tts_lease",
       "sourceLines": [
-        350,
-        384
+        377,
+        411
       ]
     },
     {
@@ -1952,8 +2221,8 @@
       "body": null,
       "sourceHandler": "get_elevenlabs_voices",
       "sourceLines": [
-        216,
-        289
+        245,
+        316
       ]
     },
     {
@@ -1983,8 +2252,202 @@
       "body": null,
       "sourceHandler": "get_voice_live_status",
       "sourceLines": [
-        176,
-        182
+        179,
+        185
+      ]
+    },
+    {
+      "id": "POST /api/audio/voice-live/session",
+      "method": "POST",
+      "pathTemplate": "/api/audio/voice-live/session",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "sdp": {
+            "type": "string",
+            "maxLength": 65536
+          },
+          "history": {
+            "type": "array",
+            "maxItems": 48,
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "maxLength": 16,
+                  "enum": [
+                    "message"
+                  ]
+                },
+                "role": {
+                  "type": "string",
+                  "maxLength": 16,
+                  "enum": [
+                    "assistant",
+                    "developer",
+                    "user"
+                  ]
+                },
+                "content": {
+                  "type": "array",
+                  "maxItems": 8,
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "maxLength": 16,
+                        "enum": [
+                          "input_text",
+                          "output_text"
+                        ]
+                      },
+                      "text": {
+                        "type": "string",
+                        "maxLength": 4000
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "text"
+                    ],
+                    "additionalProperties": false
+                  }
+                }
+              },
+              "required": [
+                "type",
+                "role",
+                "content"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "sdp"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "create_voice_live_session",
+      "sourceLines": [
+        215,
+        234
+      ]
+    },
+    {
+      "id": "POST /api/audio/voice-live/debug",
+      "method": "POST",
+      "pathTemplate": "/api/audio/voice-live/debug",
+      "source": "hermes_cli/web_routers/audio.py",
+      "permission": "audio",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "events": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "event": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "connection_id": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "handoff_id": {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                "duration_ms": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 86400000
+                },
+                "state": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "error": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "outcome": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "close_trigger": {
+                  "type": "string",
+                  "maxLength": 32
+                },
+                "conversation_changed": {
+                  "type": "boolean"
+                },
+                "profile_changed": {
+                  "type": "boolean"
+                },
+                "connection_changed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "event"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "additionalProperties": false
+      },
+      "sourceHandler": "record_voice_live_debug",
+      "sourceLines": [
+        189,
+        211
       ]
     },
     {
@@ -2193,6 +2656,11 @@
           "source": {
             "type": "string",
             "maxLength": 256
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
           }
         },
         "required": [],
@@ -2416,8 +2884,8 @@
       "body": null,
       "sourceHandler": "get_toolsets",
       "sourceLines": [
-        231,
-        277
+        224,
+        270
       ]
     },
     {
@@ -2466,8 +2934,8 @@
       },
       "sourceHandler": "toggle_toolset",
       "sourceLines": [
-        281,
-        342
+        274,
+        335
       ]
     },
     {
@@ -2505,8 +2973,8 @@
       "body": null,
       "sourceHandler": "get_toolset_config",
       "sourceLines": [
-        346,
-        429
+        339,
+        421
       ]
     },
     {
@@ -2544,8 +3012,8 @@
       "body": null,
       "sourceHandler": "get_toolset_models",
       "sourceLines": [
-        433,
-        469
+        425,
+        461
       ]
     },
     {
@@ -2575,8 +3043,8 @@
       "body": null,
       "sourceHandler": "get_terminal_backends",
       "sourceLines": [
-        651,
-        674
+        646,
+        669
       ]
     },
     {
@@ -2606,8 +3074,8 @@
       "body": null,
       "sourceHandler": "get_learning_graph",
       "sourceLines": [
-        678,
-        692
+        694,
+        708
       ]
     },
     {
@@ -2642,8 +3110,8 @@
       "body": null,
       "sourceHandler": "get_learning_node",
       "sourceLines": [
-        705,
-        708
+        721,
+        724
       ]
     },
     {
@@ -2692,8 +3160,8 @@
       },
       "sourceHandler": "update_learning_node",
       "sourceLines": [
-        723,
-        727
+        739,
+        743
       ]
     },
     {
@@ -2737,8 +3205,8 @@
       },
       "sourceHandler": "delete_learning_node",
       "sourceLines": [
-        712,
-        719
+        728,
+        735
       ]
     },
     {
@@ -2768,8 +3236,8 @@
       "body": null,
       "sourceHandler": "list_cron_jobs",
       "sourceLines": [
-        669,
-        670
+        702,
+        703
       ]
     },
     {
@@ -2807,8 +3275,8 @@
       "body": null,
       "sourceHandler": "get_cron_job",
       "sourceLines": [
-        674,
-        675
+        707,
+        708
       ]
     },
     {
@@ -2852,8 +3320,8 @@
       "body": null,
       "sourceHandler": "list_cron_job_runs",
       "sourceLines": [
-        679,
-        680
+        712,
+        713
       ]
     },
     {
@@ -2883,8 +3351,156 @@
       "body": null,
       "sourceHandler": "list_cron_blueprints",
       "sourceLines": [
-        859,
-        867
+        892,
+        900
+      ]
+    },
+    {
+      "id": "POST /api/cron/jobs/{job_id}/pause",
+      "method": "POST",
+      "pathTemplate": "/api/cron/jobs/{job_id}/pause",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "settings.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "pause_cron_job",
+      "sourceLines": [
+        753,
+        754
+      ]
+    },
+    {
+      "id": "POST /api/cron/jobs/{job_id}/resume",
+      "method": "POST",
+      "pathTemplate": "/api/cron/jobs/{job_id}/resume",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "settings.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "resume_cron_job",
+      "sourceLines": [
+        758,
+        759
+      ]
+    },
+    {
+      "id": "DELETE /api/cron/jobs/{job_id}",
+      "method": "DELETE",
+      "pathTemplate": "/api/cron/jobs/{job_id}",
+      "source": "hermes_cli/web_routers/cron.py",
+      "permission": "settings.write",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$",
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "delete_cron_job",
+      "sourceLines": [
+        768,
+        769
+      ]
+    },
+    {
+      "id": "GET /api/delegation/routing",
+      "method": "GET",
+      "pathTemplate": "/api/delegation/routing",
+      "source": "hermes_cli/web_routers/delegation.py",
+      "permission": "read",
+      "output": "json",
+      "profileQuery": true,
+      "pathFields": [],
+      "resultProjection": "redact",
+      "availability": "implemented",
+      "limitations": [],
+      "pathParams": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "query": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      },
+      "body": null,
+      "sourceHandler": "get_delegation_routing",
+      "sourceLines": [
+        93,
+        116
       ]
     },
     {
@@ -3453,57 +4069,63 @@
     "Blocking OS/service mutation cannot be forcibly interrupted safely: cancellation/deadlines retain admission and write barriers until settlement, return uncertainty and never automatically retry; no cross-call idempotency or last-write CAS."
   ],
   "sourceSha256": {
-    "hermes_cli/web_routers/profiles.py": "d4206f10b6114e7cd8ac1d049a8f69592c7ac83bd8cc473e0c384bc3030fbf14",
-    "hermes_cli/web_routers/status.py": "15817402186f010fba182518ff5569700d84ac6437860cb9575465346283ba55",
-    "hermes_cli/web_routers/config_env.py": "ae789939968a9dcecce364094bc11dbf61fef031f4521e9d66a158caa285cf3c",
-    "hermes_cli/web_routers/files.py": "f3f11666944fc6e5b8f050476b5208a3bf0ad7338fdb202bc2620bc788981997",
+    "hermes_cli/web_routers/profiles.py": "bbc827242289bdc395b9836c7e28f36e69029fad07e4d2dfa75686421d6f0eef",
+    "hermes_cli/web_routers/status.py": "91d723e7db56ae3c22c4b98eb964e01ea9e2d11d6e209f612d891a951068449b",
+    "hermes_cli/web_routers/config_env.py": "505cc739134b0ae0e49fc69f63a42e019c88302563f34d96a525c58bf06b8d9f",
+    "hermes_cli/web_routers/files.py": "5e41dfe3bebb392492a836b532239ff67843ae70dfbdc2b0777d78658e40c828",
     "hermes_cli/web_routers/models.py": "7250d2b17addca12b3e2d50b1b019dec96cbec03b7227de186f35810bbdd9d73",
-    "hermes_cli/web_routers/sessions.py": "ad4c349b5b5f16c92d524e4fe5e721c40f877eabe6b1a74d3cfba17895b4ee70",
-    "hermes_cli/web_routers/audio.py": "906f975ef5580658a8c2e02fa111f4ce238a5e8fb30dcd4ede3102ac26f5d2fd",
-    "hermes_cli/web_routers/skills.py": "77f304a13486d8273b5aa437ca0dd2573c2d071472d1284390d34858df96e39e",
+    "hermes_cli/web_routers/sessions.py": "f1850450cb3060f211075cb5a884ca5307509ea570767c1efe4d9bbe70d9a66b",
+    "hermes_cli/web_routers/audio.py": "a472e56b20e197c9d2382235fec0092db6e9abb8393663e522a82e2a4d23290f",
+    "hermes_cli/web_routers/skills.py": "eddd41d6fefd4d41964d57a4d2369fd03766569ca83abb5499231efb55eb1c57",
     "hermes_cli/web_routers/mcp.py": "b3832e7b6f2466f8c50abb806e09a920f2b500802afb30a7a16221b59d6eff2d",
-    "hermes_cli/web_routers/tools.py": "731686aef7847d564b0ac6eda01fa874f1446e437de7ac2128319dfaf6ccf2ad",
-    "hermes_cli/web_routers/cron.py": "162275ca82796e5f6edf063b599f8193923845ccb13c13bf340ddd920b9030ba",
+    "hermes_cli/web_routers/tools.py": "8b22fce80f2886d846467b923d15fc0b339fcc8b2aac0e049d387785659be4b5",
+    "hermes_cli/web_routers/cron.py": "52478b3961f153bd14acf558eff7cc18f6eba0eaa08d3ad2b9c9827dc13f7fd5",
+    "hermes_cli/web_routers/delegation.py": "fed9e1e62511dc09e646e02047e6f600fbd8cef2fe66542583eafcb4fedb60aa",
     "hermes_cli/web_routers/git.py": "363e486bc06e9e6b24b983b45377a140e5e5f2dce5dbca45220d4ca462118f4b",
-    "apps/shared/src/gateway-contract.openrpc.json": "8848b394df533af8b37afd3cdccfc48b3e3d6ca1ce4037ebaf38653e33ed832e",
-    "tui_gateway/methods_onboarding.py": "35d2c06e4515db01afe5d118a27cebfb7c50f2bff061a8bb4d2c29a4861d290e",
-    "hermes_constants.py": "8d55a41452b625061f1f2e2f507a7e7ffb2a396e711afcc7aee28b03a6e8fa9d",
-    "hermes_cli/profiles.py": "4bad019b99bb8532d25252af53f997f2c2207232b8b694e2020f26d016ac4fd8",
-    "hermes_state.py": "c24484b3026a377621dd1a0f1d23de8e0d9d9d0b6d9600d47cee9368646c9577",
-    "hermes_state_sessions.py": "9245d76f93eb7105bbf35442eef61fbbc59aab36d9838c091ac4005057bafa95",
-    "hermes_state_messages.py": "5d81a781e61650d04e7d239fae5a59d1aa65632a029b1e14ad9ccb113de93a62",
+    "apps/shared/src/gateway-contract.openrpc.json": "997fd86281a2d836c14f7f5517d6008ff4b6fd631783dd58cf43aa40d6bd2a57",
+    "tui_gateway/methods_onboarding.py": "30eeeb07ada27c311e4d711bdc1e2626a222649954d64cd7aa670e98927ed815",
+    "hermes_constants.py": "870ad9935a62968636d6a14d160c0269dfbefd8091ab3cb71be78b30bef6360f",
+    "hermes_cli/profiles.py": "ed9be0ff625906e8b0aecdd208dcda0a484a0e3fb4ab736a91b20bae39727add",
+    "hermes_state.py": "e507ebd78b870364fd2fced94212592380cd26d0d39eec67547ed9bc233ebb98",
+    "hermes_state_sessions.py": "d5282c3db7bdb2b592f5f82ca3e85a0cff21daa58ccd49903389ba41c9577be0",
+    "hermes_state_messages.py": "b3c5ad76a6d1a63c2800a0eca0c36240ad3098999a248568e46a7c3649cf9136",
     "hermes_state_timeline.py": "ad605786c9ef97da056dbe88e2302d033207ac099cb6cc99b8efcaded38c7329",
-    "hermes_state_titles.py": "a16bbbfc27cd07894418477b3176fc2d65ff8d25079e7e4c76d67de0b2f0986a",
+    "hermes_state_titles.py": "465bfc7c86026c4526843397fc554ac3330ea6059f761f278db0d45ab0904694",
     "hermes_cli/dashboard_auth/registry.py": "d4470f431abb83a60a44c865a951fc0a4f419d95938980e46ee3cfb246055ca0",
-    "hermes_cli/dashboard_auth/middleware.py": "b36464fd05946aff9c2b31843243711de55e61d16d65dcd8a69aea2721e7fc45",
+    "hermes_cli/dashboard_auth/middleware.py": "4036350adce2e6711dba2a1448abe94450f80b8275df82f9acad4257c4add2cf",
     "hermes_cli/dashboard_auth/request_utils.py": "243d5a929b8b37f2694263448ff624751f81082755f1a5efda83f0e4bf062f24",
-    "hermes_state_search.py": "7cab568123f0a11d3b715a1d3fc03e41589cbc40b0e24ae2e7442d6d574f27c2",
-    "hermes_state_usage.py": "829c4c8838fc041d6b55357e2179c8e1c440303666acb030ab8c74b3c3e81ec3",
+    "hermes_state_search.py": "6e8f67ee7ee569adbf7d16bb116f37837e1d8589e2b6410d90a4c13e7079dfcc",
+    "hermes_state_usage.py": "559ec5de3d1713318e0f9aa9f7a7023d0d101fb2d83af4aa3f6eeaca11e15527",
     "hermes_cli/session_listing.py": "c68ca4a4409abf06c16292b383da9c7df72b3daddadc12c7d4cadd43ba36dd13",
-    "hermes_cli/inventory.py": "ef4280ca5abc210e4ef273015d04debf5b5582375af272b52822b56a8c03d04a",
-    "hermes_cli/web_server_sessions.py": "70eadc8767c730fe588cca26b0b9c9d4a27233d7c395c32a89845ef131766473",
-    "hermes_cli/web_server_profiles.py": "d5a8fdd14de5ad5ce88ab263fc1068bebf2e1692d5a06c8f4f7af6b2024c54b8",
-    "hermes_cli/web_server_config.py": "94bc335e3a09b3c05974cb5d7543dadfe09fe15e4149fed6e7bda5564f7d05df",
-    "hermes_cli/config_defaults.py": "3770f92378e37093720040de6d4813202a88edc7a196415dfc7be7b4e88064d7",
-    "hermes_cli/web_models.py": "9e13fbbc7429a843fafca636a37192b0a2a4a876f778eb7fe7266c78b823e0dd",
-    "hermes_cli/web_server_files.py": "7e0628d69e6db82efad0424c167c126654f5e92570b82cf50250223f3daeadab",
-    "tui_gateway/server.py": "6807f277b14dde36dd3c2558b33b29b89db1dda5640de7e50555b8b199244974",
-    "tui_gateway/prompt_attachments.py": "212f9a54f67db491a3ef9a7e046bcd4483984f898c05f79a52a6b6ef3284cafa",
-    "tui_gateway/methods_prompt.py": "7307dba5aa1df597c99c551b4f344d0e292141e0e6c45f3c3fa2daddb0dbeee9",
-    "tui_gateway/contracts/prompt_voice.py": "c0e1fff281fab0e356779677022fefad37d42d7288563429b21e9af3fa390499",
+    "hermes_cli/inventory.py": "db3710c659155baabc7f599acef8f737974f8c8fbad365f35f01890daaac1e01",
+    "hermes_cli/web_server_sessions.py": "14a9d412ca3d9a6b000939813a41784116e48c5fe1a8358d3782f1499e08fd7e",
+    "hermes_cli/web_server_profiles.py": "efddf2945c7ea995604a3947a9ee478921def1d134dfb0938afb4f712e07b967",
+    "hermes_cli/web_server_config.py": "4262177da910882fb6cf7021e7ce3aaa19d76d191d8441a2f367c2c35477945a",
+    "hermes_cli/config_defaults.py": "a37907fba887e648fcb50cc2120045afb88d894dc90919a8c2091bd7c6f19d3c",
+    "hermes_cli/web_models.py": "0b6465059692c40f3a87ebef28e785d333154650d7a4653034cd07694fbc6512",
+    "hermes_cli/web_server_files.py": "a8183d13e98b42acc35c2450c863edec2aff349226c6d568d456d69bbd99e448",
+    "tui_gateway/server.py": "11ac21ea793cc1eb52d47d0b80a89ff5cbcd35104abf4ceaa4f51be7d362864c",
+    "tui_gateway/prompt_attachments.py": "93464afe5f9070cbea33e515d01fd71a1d47a14152d44f22f5ba7f5afebe5603",
+    "tui_gateway/methods_prompt.py": "929d94840070c9a7a7a7698ff5dd43da9f408130a0b40085dd4a21c0098d19be",
+    "tui_gateway/contracts/prompt_voice.py": "ec8f19a6d4205260a47c35f5e631d5062eee260be1bab8197b35c9b81b851196",
     "tools/voice_client_config.py": "0c2a922bb597ca93d7805642291b405c8add59e7c61d64ab344f726e7216d343",
     "tools/transcription_tools.py": "bd0402c231fa38da0679d3b58c0502de8b878b0c5e6410cbd6b17d6a227c0291",
     "tools/transcription_cloud.py": "af7bdcee0eddb136ba4351acc049db67affc6afb2aa3a6afc7263cd3cdaaed77",
     "tools/stt_lease.py": "bf2221e9c517485e39ed78ba50ccc9fe868479beb6b758f0b686db48fa40c523",
     "tools/tts_tool_lifecycle.py": "943e3142f0065a3e2339ac66ef82f5b9513e931bf380f6a23d8ba6736eccf2bc",
-    "apps/desktop/src/global.d.ts": "a68f462f009657cbd1ff0a138343c4538bd40ab2f9915930f3ff4422260a1459",
-    "apps/desktop/electron/main.ts": "0230ab97b874e3e504ea150512cf2cba80dbd1f5c45f60add68c37760d75decb",
-    "apps/desktop/src/api/system.ts": "c84a918cd26d5f4c7a029d6f30eab89499e9e04f896e85df220a835aa60f26f9",
+    "apps/desktop/src/global.d.ts": "3febf254fac71794ec2530359fa855e6762d9f8aacd119fce13ff953be282a3e",
+    "apps/desktop/electron/main.ts": "06cdfc2dd85eaa9ffa158490aa7545e9506ba70ca738c183641204eaa2d8de79",
+    "apps/desktop/src/api/system.ts": "3867a4fad8cbe78cd98820532dda2fb9c5dc84e05f3f70520e5a43b07ec5716a",
     "apps/desktop/src/plugins/kanban/api.ts": "0bdbd684e91217ccbbe9fda3dc7b3a441d94a342f71f9ba1a69bb5ae34438ed3",
-    "apps/desktop/src/app/session/hooks/use-prompt-actions/index.ts": "8d43c3adfb8ef2b9b53da9d251e949fbaab41f9b2db22a43b1624a83c52d0361",
-    "apps/desktop/src/app/session/hooks/use-prompt-actions/submit.ts": "ebb6171098c11b5e15b164dba5bb195b3a0ef2f698f27b9c23fb770eeebc2e8e",
+    "apps/desktop/src/app/session/hooks/use-prompt-actions/index.ts": "4354dc7f330675251e77e0964015ab3fec2b50d9c284754a53337e129fd8b6d0",
+    "apps/desktop/src/app/session/hooks/use-prompt-actions/submit.ts": "e42270e02eef8b8053222e28c5d78b99911eeb5c0b4647ab2259b45c4c327014",
     "apps/desktop/src/app/chat/composer/hooks/use-mic-recorder.ts": "e47f3c24dc3793df4579f1c65863062fe56dc02c86f8231eaff57eba37ecd08d",
     "apps/desktop/src/lib/voice-client-direct.ts": "40dee7c570686308dcd93fb5e32488d86a875d6e42578363efc1d53907b004d3",
-    "apps/desktop/src/lib/voice-playback.ts": "2e394edad71ef04ee4b7baef5fb4f3329f9a02909037d456cac6899a24ee2646"
+    "apps/desktop/src/lib/voice-playback.ts": "2e394edad71ef04ee4b7baef5fb4f3329f9a02909037d456cac6899a24ee2646",
+    "apps/desktop/src/lib/voice-live.ts": "d940f85a2deb10507774e58494121de9d747d21ee4b7ded2e65dc7d7f5187bfd",
+    "tools/voice_live.py": "5b5cf693f21e41ddee5804326fe530f056a931c40ef22f8d1f0449beb2f64879",
+    "tools/voice_live_debug.py": "5536943f3387e798d3fe015e4a96acd06ce326ebcda1d3797382a9fd5305811a",
+    "apps/desktop/src/api/sessions.ts": "316ba4a9b5a4e1f898328b56796a8eb180dc5360f9ba56ba82dcdcc03a11a64c",
+    "apps/shared/src/session-http-mutations.ts": "aa11b143d249678c102b0d00b29062ec6fc84f28ec5acbfd3a2ab038b4e81a25"
   }
 }

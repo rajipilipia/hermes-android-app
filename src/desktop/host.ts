@@ -14,7 +14,7 @@ import { nativeRest, type NativeRest } from "./native-api";
 import { openExternal } from "./native-browser";
 import { contextMenuEdit } from "./clipboard";
 import { noteFileDenial } from "./file-denial";
-import { diag } from "./diag";
+import { diag, full } from "./diag";
 /** Time in the background after which coming back counts as a wake (sockets may be stale). */
 export const WAKE_AFTER_MS = 30_000;
 export interface HostOptions {
@@ -170,14 +170,18 @@ export function createDesktopHost(options: HostOptions) {
       const started = Date.now();
       const timing = (status: number | string) =>
         console.info(`hermes-android timing op="${params.operation}" via=rest ms=${Date.now() - started} status=${status}`);
+      // DEV PHONE: full request and response content (secrets masked) for the on-phone file log.
+      full(`rest_req op="${params.operation}"`, { pathParams: params.pathParams, query: params.query, body: params.body });
       let response: { status: number; body: unknown };
       try {
         response = await rest()(params, timeoutMs);
       } catch (error) {
         timing(error instanceof Error ? error.name : "error");
+        full(`rest_fail op="${params.operation}"`, error instanceof Error ? `${error.name}: ${error.message}` : String(error));
         throw error;
       }
       timing(response?.status ?? "invalid");
+      full(`rest_res op="${params.operation}" status=${response?.status}`, response?.body);
       if (response?.status >= 400) noteFileDenial(params, response);
       assertOpen();
       if (
@@ -223,6 +227,14 @@ export function createDesktopHost(options: HostOptions) {
     getRecentLogs: async () => ({
       path: "",
       lines: ["Android does not own a local Hermes backend."],
+    }),
+    // Desktop's "Open logs" opens a folder on the PC; the phone has none. Desktop's callers
+    // already handle ok:false (they only call it, some without a guard), so answer it instead of
+    // leaving the method undefined (2 uncaught errors on the phone). Logs: the phone file log.
+    revealLogs: async () => ({
+      ok: false,
+      path: "",
+      error: "Android keeps its logs in the app file log, not in a folder.",
     }),
     getGatewayWsUrl,
     onPowerResume,

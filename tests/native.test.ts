@@ -46,6 +46,6 @@ it("in-app browser: system-browser links and the native pane are the only browse
   const java = read("src/us/pilipia/hermes/prototype/MainActivity.java");
   expect(java).toContain('web.addJavascriptInterface(new BrowserBridge(),"HermesBrowser")');
   // Stage 0 "external" plus stage 1 "guest" (BrowserPane); nothing else reaches native.
-  expect(java).toContain('!("external".equals(operation)||"guest".equals(operation))||value==null||value.length()>8192)return;');
+  expect(java).toContain('!("external".equals(operation)||"guest".equals(operation))||value==null||value.length()>("guest".equals(operation)?3*1024*1024:8192))return;');
   expect(java).toContain("if(!NativeHostPolicy.allowExternal(value))");
 });

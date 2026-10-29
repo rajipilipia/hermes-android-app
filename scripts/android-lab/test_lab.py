@@ -17,6 +17,136 @@ class LabTests(unittest.TestCase):
         (module.LAB / "tmp").mkdir(parents=True, exist_ok=True)
         return module
 
+    def test_atomic_save_retries_a_real_windows_reader_and_counts_it(self):
+        lab = self.load()
+        import io
+        import json
+        import tempfile
+        from contextlib import redirect_stderr
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=lab.LAB / "tmp") as folder:
+            path = Path(folder) / "state.json"
+            path.write_text('{"generation": "old"}', encoding="utf-8")
+            reader = path.open("r", encoding="utf-8")
+            diagnostics = io.StringIO()
+            try:
+                def release_reader(delay):
+                    self.assertEqual(json.loads(reader.read()), {"generation": "old"})
+                    reader.close()
+                with redirect_stderr(diagnostics), patch.object(lab.time, "sleep", side_effect=release_reader):
+                    retries = lab.save_json(path, {"generation": "new"})
+                self.assertEqual(retries, 1)
+                self.assertEqual(json.loads(path.read_text()), {"generation": "new"})
+                events = [json.loads(line) for line in diagnostics.getvalue().splitlines()]
+                self.assertEqual(len(events), 1)
+                self.assertEqual(events[0]["event"], "state_replace_retry")
+                self.assertEqual(events[0]["retry"], 1)
+                self.assertIn(os.getpid(), [p["pid"] for p in events[0]["holders"]["processes"]])
+                self.assertFalse(list(Path(folder).glob("*.writing")))
+            finally:
+                reader.close()
+
+    def test_state_reader_serializes_publication_until_closed(self):
+        lab = self.load()
+        import json
+        import tempfile
+        import threading
+        with tempfile.TemporaryDirectory(dir=lab.LAB / "tmp") as folder:
+            path = Path(folder) / "state.json"
+            path.write_text('{"generation": "old"}', encoding="utf-8")
+            started, finished = threading.Event(), threading.Event()
+            result, errors = [], []
+            def publish():
+                started.set()
+                try:
+                    result.append(lab.save_json(path, {"generation": "new"}))
+                except Exception as exc:
+                    errors.append(exc)
+                finally:
+                    finished.set()
+            with lab.state_reader(path) as reader:
+                writer = threading.Thread(target=publish)
+                writer.start()
+                self.assertTrue(started.wait(1))
+                self.assertFalse(finished.wait(0.1))
+                self.assertEqual(json.load(reader), {"generation": "old"})
+            writer.join(timeout=5)
+            self.assertFalse(writer.is_alive())
+            self.assertEqual(errors, [])
+            self.assertEqual(result, [0])
+            self.assertEqual(json.loads(path.read_text()), {"generation": "new"})
+
+    def test_atomic_save_persistent_reader_fails_with_exact_retry_count(self):
+        lab = self.load()
+        import io
+        import json
+        import tempfile
+        from contextlib import redirect_stderr
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory(dir=lab.LAB / "tmp") as folder:
+            path = Path(folder) / "state.json"
+            path.write_text('{"generation": "old"}', encoding="utf-8")
+            diagnostics = io.StringIO()
+            with path.open("r", encoding="utf-8"), redirect_stderr(diagnostics), patch.object(lab.time, "sleep"):
+                with self.assertRaises(PermissionError):
+                    lab.save_json(path, {"generation": "new"})
+            events = [json.loads(line) for line in diagnostics.getvalue().splitlines()]
+            self.assertEqual([e["retry"] for e in events if e["event"] == "state_replace_retry"], [1, 2, 3, 4, 5])
+            self.assertEqual(events[-1]["event"], "state_replace_failed")
+            self.assertEqual(json.loads(path.read_text()), {"generation": "old"})
+            self.assertFalse(list(Path(folder).glob("*.writing")))
+
+    def test_atomic_save_does_not_retry_other_errors(self):
+        lab = self.load()
+        import tempfile
+        from unittest.mock import patch
+        wrong_permission = PermissionError("not an eligible Windows sharing error")
+        wrong_permission.winerror = 123
+        for error in (OSError("disk full"), wrong_permission):
+            with self.subTest(error=type(error).__name__), tempfile.TemporaryDirectory(dir=lab.LAB / "tmp") as folder:
+                path = Path(folder) / "state.json"
+                with patch.object(lab.os, "replace", side_effect=error) as replace, patch.object(
+                        lab.time, "sleep") as sleep, patch.object(lab, "file_holders") as holders:
+                    with self.assertRaises(type(error)):
+                        lab.save_json(path, {"value": 1})
+                    replace.assert_called_once()
+                    sleep.assert_not_called()
+                    holders.assert_not_called()
+                self.assertFalse(path.exists())
+                self.assertFalse(list(Path(folder).glob("*.writing")))
+
+    def test_state_access_coordinates_separate_cli_processes(self):
+        lab = self.load()
+        import json
+        import subprocess
+        import sys
+        import tempfile
+        with tempfile.TemporaryDirectory(dir=lab.LAB / "tmp") as folder:
+            path = Path(folder) / "state.json"
+            path.write_text('{"generation": "old"}', encoding="utf-8")
+            code = ("import runpy,sys; from pathlib import Path; "
+                    "lab=runpy.run_path(sys.argv[1],run_name='reader_fixture'); "
+                    "reader=lab['state_reader'](Path(sys.argv[2])); reader.__enter__(); "
+                    "print('READY',flush=True); sys.stdin.read(); reader.__exit__(None,None,None)")
+            child = subprocess.Popen([sys.executable, "-B", "-c", code, str(SCRIPT), str(path)],
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+            try:
+                self.assertEqual(child.stdout.readline().strip(), "READY")
+                with self.assertRaisesRegex(RuntimeError, "state access lock failed or timed out"):
+                    lab.save_json(path, {"generation": "new"})
+                self.assertEqual(json.loads(path.read_text()), {"generation": "old"})
+                child.stdin.close()
+                child.wait(timeout=5)
+                self.assertEqual(child.returncode, 0)
+                self.assertEqual(lab.save_json(path, {"generation": "new"}), 0)
+                self.assertEqual(json.loads(path.read_text()), {"generation": "new"})
+            finally:
+                if child.poll() is None:
+                    child.kill()
+                    child.wait(timeout=5)
+                child.stdin.close()
+                child.stdout.close()
+
     def test_child_environment_isolates_discovery_and_storage(self):
         lab = self.load()
         env = lab.child_env({"ANDROID_HOME": "wrong", "ANDROID_SERIAL": "physical",
@@ -320,6 +450,39 @@ class LabTests(unittest.TestCase):
                 self.assertEqual(stored["cleanup_remaining_pids"], [])
             finally:
                 child.stdin.close()
+
+    def test_cleanup_waits_for_exit_identity_and_keeps_failure_visible(self):
+        lab = self.load()
+        from unittest.mock import Mock, patch
+        import itertools
+        import json
+        import tempfile
+        identity = {"pid": 424242, "created": "fixture", "exe": "fixture"}
+        job = Mock()
+        job.pids.return_value = []
+        with tempfile.TemporaryDirectory(dir=lab.LAB / "tmp") as folder:
+            path = Path(folder) / "state.json"
+            with self.subTest("process exit record can lag the empty job"):
+                state = {"status": "starting", "emulator_processes": [identity]}
+                with patch.object(lab, "STATE", path), patch.object(
+                        lab, "device", side_effect=RuntimeError("fixture only")), patch.object(
+                        lab, "same_process", side_effect=[True, False]), patch.object(lab.time, "sleep") as sleep:
+                    lab.cleanup(state, job)
+                    sleep.assert_called_once_with(0.05)
+                stored = json.loads(path.read_text())
+                self.assertEqual(stored["status"], "stopped")
+                self.assertEqual(stored["cleanup_remaining_pids"], [])
+            with self.subTest("a persistent process must still fail"):
+                state = {"status": "starting", "emulator_processes": [identity]}
+                with patch.object(lab, "STATE", path), patch.object(
+                        lab, "device", side_effect=RuntimeError("fixture only")), patch.object(
+                        lab, "same_process", return_value=True), patch.object(
+                        lab.time, "monotonic", side_effect=itertools.count(0, 11)):
+                    with self.assertRaisesRegex(RuntimeError, "some owned processes remain"):
+                        lab.cleanup(state, job)
+                stored = json.loads(path.read_text())
+                self.assertNotEqual(stored["status"], "stopped")
+                self.assertEqual(stored["cleanup_remaining_pids"], [identity["pid"]])
 
     def test_stop_uses_exact_owned_control_listener(self):
         lab = self.load()

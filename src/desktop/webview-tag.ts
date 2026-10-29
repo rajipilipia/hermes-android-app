@@ -10,6 +10,7 @@ type Request = (value: string) => Promise<string>;
 type Detail = Record<string, unknown> & { pageUrl?: string; pageTitle?: string; canGoBack?: boolean; canGoForward?: boolean };
 
 export type GuestElement = HTMLElement & {
+  loadHTML?: (html: string) => Promise<void>;
   loadURL(url: string): Promise<void>;
   getURL(): string;
   getTitle(): string;
@@ -45,8 +46,11 @@ export function installWebviewTag(win: Window & typeof globalThis, request: Requ
     back = false;
     forward = false;
     loading = false;
+    loadEpoch = 0;
     created = false;
     wanted = "";
+    html: string | null = null;
+    evictedVisible = false;
     placed = "";
     attached = false;
 
@@ -58,20 +62,43 @@ export function installWebviewTag(win: Window & typeof globalThis, request: Requ
       this.placed = "";
       void send({ op: "create", guest: this.id }).then(() => {
         const first = this.wanted || this.el.getAttribute("src") || "";
-        if (first) void this.load(first).catch(() => {});
+        const pending = this.html !== null ? this.loadHTML(this.html) : first ? this.load(first) : undefined;
+        const epoch = this.loadEpoch;
+        // Before creation, the caller has already returned. Report a current
+        // deferred failure through Desktop's existing recovery event instead.
+        void pending?.catch((error: unknown) => {
+          if (!this.el.isConnected || !this.created || epoch !== this.loadEpoch) return;
+          this.event("did-fail-load", {
+            errorCode: -2,
+            errorDescription: error instanceof Error ? error.message : String(error),
+            isMainFrame: true,
+          });
+        });
       }, () => (this.created = false));
     }
 
     load(url: string): Promise<void> {
+      const epoch = ++this.loadEpoch;
       // Desktop's empty Browser tab is about:blank: nothing to load natively.
       if (url === "about:blank") return Promise.resolve();
       this.wanted = url;
       this.loading = true;
       if (!this.created) return Promise.resolve();
       return send({ op: "load", guest: this.id, url }).then(() => undefined, (error: unknown) => {
-        this.loading = false;
+        if (epoch === this.loadEpoch) this.loading = false;
         throw error instanceof Error ? error : new Error(String(error));
       });
+    }
+
+    loadHTML(html: string): Promise<void> {
+      ++this.loadEpoch;
+      if (new TextEncoder().encode(html).length > 2 * 1024 * 1024)
+        return Promise.reject(new Error("HTML preview exceeds the 2 MiB limit."));
+      this.html = html;
+      this.wanted = "";
+      this.loading = true;
+      if (!this.created) return Promise.resolve();
+      return send({ op: "html", guest: this.id, html }).then(() => undefined);
     }
 
     op(name: string) {
@@ -79,11 +106,28 @@ export function installWebviewTag(win: Window & typeof globalThis, request: Requ
     }
 
     event(type: string, detail: Detail) {
+      // Only native touch gestures can emit this event. Offline guest scripts
+      // have no bridge and cannot drive another session's scroll container.
+      if (type === "preview-scroll") {
+        const dy = detail.dy;
+        if (this.html !== null && typeof dy === "number" && Number.isFinite(dy) && Math.abs(dy) <= 500) {
+          for (let node = this.el.parentElement; node; node = node.parentElement) {
+            if (/(auto|scroll)/.test(win.getComputedStyle(node).overflowY) && node.scrollHeight > node.clientHeight) {
+              node.scrollTop += dy;
+              break;
+            }
+          }
+        }
+        return;
+      }
       if (type === "evicted") {
         // Native closed this guest to save memory (or its page crashed); reopen it when shown.
         this.created = false;
         this.placed = "";
-        if (this.url) this.wanted = this.url;
+        if (this.html !== null) {
+          this.evictedVisible = true;
+          this.el.dispatchEvent(new Event("preview-paused"));
+        } else if (this.url) this.wanted = this.url;
         return;
       }
       if (typeof detail.pageUrl === "string" && detail.pageUrl) this.url = detail.pageUrl;
@@ -93,19 +137,47 @@ export function installWebviewTag(win: Window & typeof globalThis, request: Requ
       if (type === "did-start-loading") this.loading = true;
       if (type === "did-stop-loading" || type === "did-fail-load") this.loading = false;
       const event = new Event(type);
-      for (const key of ["url", "title", "errorCode", "errorDescription", "validatedURL", "isMainFrame"])
+      for (const key of ["url", "title", "errorCode", "errorDescription", "validatedURL", "isMainFrame", "height"])
         if (key in detail) Object.defineProperty(event, key, { value: detail[key] });
       if (type === "page-title-updated") Object.defineProperty(event, "title", { value: this.title });
       this.el.dispatchEvent(event);
     }
 
     /** Rectangle in CSS px and whether nothing covers it (menus, dialogs, drawers, error panes). */
-    measure(): { x: number; y: number; w: number; h: number; visible: boolean } {
+    measure(): { x: number; y: number; w: number; h: number; visible: boolean; contentW?: number; contentH?: number; offsetX?: number; offsetY?: number } {
       const box = this.el.getBoundingClientRect();
-      const x = Math.max(0, box.left), y = Math.max(0, box.top);
-      const w = Math.max(0, Math.min(box.right, win.innerWidth) - x), h = Math.max(0, Math.min(box.bottom, win.innerHeight) - y);
+      let x = Math.max(0, box.left), y = Math.max(0, box.top);
+      let right = Math.min(box.right, win.innerWidth), bottom = Math.min(box.bottom, win.innerHeight);
+      if (this.html !== null) {
+        // The transcript, not the whole app viewport, is the clipping window.
+        // Preserve the guest's full layout size as its visible slice moves.
+        for (let node = this.el.parentElement; node; node = node.parentElement) {
+          const style = win.getComputedStyle(node), r = node.getBoundingClientRect();
+          if (/(hidden|clip|auto|scroll)/.test(style.overflowX)) { x = Math.max(x, r.left); right = Math.min(right, r.right); }
+          if (/(hidden|clip|auto|scroll)/.test(style.overflowY)) { y = Math.max(y, r.top); bottom = Math.min(bottom, r.bottom); }
+          // Reuse Desktop's existing sticky-prompt exclusion; native overlays
+          // do not inherit their DOM ancestor's CSS clip-path.
+          if (node.hasAttribute("data-sticky-prompt-clip")) {
+            const inset = Number.parseFloat(style.getPropertyValue("--sticky-prompt-clip"));
+            if (Number.isFinite(inset) && inset > 0) y = Math.max(y, r.top + Math.min(r.height, inset));
+          }
+        }
+        // Keep the native slice above this chat's composer. All other overlays
+        // still go through uncovered(), including menus and blocking dialogs.
+        if (this.el.closest('[data-slot="aui_thread-viewport"]')) {
+          const dock = this.el.closest('[data-chat-surface]')?.querySelector('[data-slot="composer-dock"]');
+          const r = dock?.getBoundingClientRect();
+          if (r && r.width > 0 && r.height > 0 && r.left < right && r.right > x && r.top < bottom && r.bottom > y)
+            bottom = Math.min(bottom, r.top);
+        }
+      }
+      const w = Math.max(0, right - x), h = Math.max(0, bottom - y);
       const rect = { x: Math.round(x), y: Math.round(y), w: Math.round(w), h: Math.round(h) };
-      return { ...rect, visible: w >= 1 && h >= 1 && doc.visibilityState === "visible" && this.uncovered(x, y, w, h) };
+      return {
+        ...rect,
+        ...(this.html !== null ? { contentW: Math.round(box.width), contentH: Math.round(box.height), offsetX: Math.max(0, Math.round(x - box.left)), offsetY: Math.max(0, Math.round(y - box.top)) } : {}),
+        visible: w >= 1 && h >= 1 && doc.visibilityState === "visible" && this.uncovered(x, y, w, h),
+      };
     }
 
     private uncovered(x: number, y: number, w: number, h: number): boolean {
@@ -137,8 +209,12 @@ export function installWebviewTag(win: Window & typeof globalThis, request: Requ
       }
       guest.attached = true;
       const place = guest.measure();
+      if (guest.evictedVisible) {
+        if (!place.visible) guest.evictedVisible = false;
+        else continue;
+      }
       if (!guest.created) {
-        if (!place.visible && guest.url) continue; // An evicted guest reopens only when shown.
+        if (!place.visible && (guest.url || guest.html !== null)) continue;
         guest.create();
       }
       const key = JSON.stringify(place);
@@ -158,6 +234,7 @@ export function installWebviewTag(win: Window & typeof globalThis, request: Requ
     guests.set(guest.id, guest);
     const tag = el as GuestElement;
     Object.assign(tag, {
+      loadHTML: (html: string) => guest.loadHTML(String(html)),
       loadURL: (url: string) => guest.load(String(url)),
       getURL: () => guest.url || guest.wanted || el.getAttribute("src") || "",
       getTitle: () => guest.title,

@@ -1,4 +1,7 @@
-/* Phone layout for the pinned Hermes Desktop renderer. Loaded after the renderer styles.
+/* Phone layout for the pinned Hermes Desktop renderer. This file loads BEFORE the renderer styles
+   (Desktop's CSS chunk is appended to <head> later), so a rule here that sets the same property as
+   a Desktop rule of EQUAL strength loses. Such rules carry the html[data-android-touch] prefix to
+   win; tests/browser/phone-audit.mjs checks them by computed style.
    Scoped by viewport/pointer so tablets, the unfolded Fold and desktop preview keep the
    upstream layout. Nothing here removes a feature: hidden titlebar buttons stay reachable
    from the command palette (status bar) and keyboard actions. */
@@ -30,7 +33,7 @@
   /* Composer status rows (e.g. "Share usage stats? ... Share with Nous / Keep on this computer /
      No thanks / Details") put all buttons in one no-wrap column, which ran past the right edge.
      On a phone the buttons move to their own line under the text and wrap. */
-  [data-slot="composer-status-stack"] .status-row-actions {
+  html[data-android-touch] [data-slot="composer-status-stack"] .status-row-actions {
     grid-column: 3 / -1;
     grid-row: 2;
     flex-wrap: wrap;
@@ -58,14 +61,15 @@
   :root .wordmark {
     --fit-min: 1.5rem !important;
   }
-  /* In-app browser pane: Desktop keeps it beside the chat (22rem minimum), which left the chat
-     ~90px wide. On a phone show one at a time: while a browser pane is visible the chat group
-     steps aside and the pane takes the width; closing the pane brings the chat back. */
-  body:has([data-pane-host^="preview-tile:"]:not([inert]))
-    [data-tree-split] > div:has([data-tree-tab="workspace"]):not(:has([data-tree-tab^="preview-tile:"])) {
+  /* HTML/browser keep-alive hosts live OUTSIDE the split grid; PDF/text/images render
+     inside it. Use active tabs for both, including session-only groups and ignoring
+     old inactive file tabs in a chat group.
+     Phone-only presentation; stored split sizes and unfolded layouts stay unchanged. */
+  body:has([data-tree-tab^="preview-tile:"][aria-selected="true"])
+    [data-tree-split] > div:has(:is([data-tree-tab="workspace"], [data-tree-tab^="session-tile:"])[aria-selected="true"]):not(:has([data-tree-tab^="preview-tile:"][aria-selected="true"])) {
     display: none !important;
   }
-  body:has([data-pane-host^="preview-tile:"]:not([inert])) [data-tree-split] > div:has([data-tree-tab^="preview-tile:"]) {
+  body:has([data-tree-tab^="preview-tile:"][aria-selected="true"]) [data-tree-split] > div:has([data-tree-tab^="preview-tile:"][aria-selected="true"]) {
     flex: 1 1 0 !important; /* Desktop's 0.5 share would fill only half the screen once alone */
     min-width: 0 !important;
   }
@@ -73,6 +77,11 @@
 
 /* ---- Phone-like: narrow, or a phone held sideways (short and touch) ---- */
 @media (max-width: 639.98px), (max-height: 500px) and (pointer: coarse) {
+  /* The timeline has a 48px touch target that overlaps the chat column. Reserve
+     its gutter so a native inline guest never covers it or fails its hit test. */
+  body:has([data-slot="thread-timeline-ticks"]) [data-android-inline-preview] {
+    width: calc(100% - 32px);
+  }
   /* The window-drag strip beside the tabs is dead space on a phone and pushes "+" out of reach. */
   [data-window-drag-handle] {
     display: none !important;
@@ -137,6 +146,27 @@
     position: absolute;
     inset: -6px -4px;
   }
+  /* Hit areas of 40px for the small icon buttons (invisible; visual size unchanged). Where
+     neighbours touch (right titlebar icons, sidebar footer icons) the width stays the button's
+     own so no two areas overlap; only the height grows. The titlebar sits at the screen top, so
+     its area grows downward. html[data-android-touch] beats the generic inset above. */
+  html[data-android-touch] [data-size="icon-titlebar"]::after {
+    inset: -5px 0 -11px;
+  }
+  html[data-android-touch] [data-titlebar-cluster="left"] [data-size="icon-titlebar"]::after {
+    inset: -5px -6px -11px;
+  }
+  html[data-android-touch] button[aria-label="Session actions"]::after {
+    inset: -10px -8px;
+  }
+  html[data-android-touch] :is(button[aria-label="New profile"], button[aria-label="Import profile…"], button[data-size="icon-xs"][aria-pressed]) {
+    position: relative;
+  }
+  html[data-android-touch] :is(button[aria-label="New profile"], button[aria-label="Import profile…"], button[data-size="icon-xs"][aria-pressed])::after {
+    content: "";
+    position: absolute;
+    inset: -10px 0 -4px;
+  }
   /* Composer row (2026-10-18: aligned and sized for touch). Upstream uses
      24px controls with a 26px primary button, centers drift by 2px when the row wraps (320px).
      Touch: 32px controls, 34px primary (send / stop / voice), one shared vertical center. */
@@ -177,7 +207,7 @@
   [data-slot="aui_msg-actions"] {
     gap: 0.125rem;
   }
-  [data-slot="aui_msg-actions"] button {
+  html[data-android-touch] [data-slot="aui_msg-actions"] button {
     width: 2rem;
     height: 2rem;
   }

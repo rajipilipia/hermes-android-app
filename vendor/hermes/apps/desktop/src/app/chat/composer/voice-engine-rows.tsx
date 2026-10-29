@@ -13,9 +13,9 @@ import { $voiceLiveStatus, selectedVoiceChatMode, setVoiceChatMode } from '@/sto
 
 /**
  * Which engine the next voice conversation mounts: the chained
- * speech-to-text → Hermes → speech loop, or GPT-Live delegating to Hermes.
+ * speech-to-text → Hermes → speech loop, or a live engine delegating to Hermes.
  *
- * Radio rows, not a toggle: the user is choosing between two named things and
+ * Radio rows, not a toggle: the user is choosing between named engines and
  * the checked row tells them which one the next press starts. Rendered inside
  * whichever menu the layout has room for (the folded voice menu, or the
  * right-click menu on the start button), so the same rows appear in both.
@@ -31,35 +31,43 @@ export function VoiceEngineRows({ disabled }: { disabled: boolean }) {
     return null
   }
 
-  const liveAvailable = status.available
+  const selected = selectedVoiceChatMode(status)
+
+  // Readiness belongs only to the selected mode. Let users select another
+  // provider, then refresh its status; never infer its credentials from this one.
+  const engines = [
+    { mode: 'gpt-live', label: c.voiceEngineLive, detail: c.voiceEngineLiveNeedsKey },
+    { mode: 'codex-live', label: c.voiceEngineCodexLive, detail: c.voiceEngineCodexLiveDescription }
+  ] as const
 
   return (
     <>
       <DropdownMenuLabel>{c.voiceEngine}</DropdownMenuLabel>
       <DropdownMenuRadioGroup
         onValueChange={value => {
-          if (value !== 'chained' && value !== 'gpt-live') {
+          if (value !== 'chained' && value !== 'gpt-live' && value !== 'codex-live') {
             return
           }
 
           triggerHaptic('open')
           setVoiceChatMode(value).catch(error => notifyError(error, c.voiceEngineChangeFailed))
         }}
-        value={selectedVoiceChatMode(status)}
+        value={selected}
       >
         <DropdownMenuRadioItem className={dropdownMenuRow} disabled={disabled} value="chained">
           {c.voiceEngineChained}
         </DropdownMenuRadioItem>
-        <DropdownMenuRadioItem className={dropdownMenuRow} disabled={disabled || !liveAvailable} value="gpt-live">
-          <span className="flex min-w-0 flex-col">
-            <span>{c.voiceEngineLive}</span>
-            {liveAvailable ? null : (
-              <span className="text-muted-foreground truncate text-xs">
-                {status.reason ?? c.voiceEngineLiveNeedsKey}
-              </span>
-            )}
-          </span>
-        </DropdownMenuRadioItem>
+        {engines.map(engine => (
+          <DropdownMenuRadioItem className={dropdownMenuRow} disabled={disabled} key={engine.mode} value={engine.mode}>
+            <span className="flex min-w-0 flex-col">
+              <span>{engine.label}</span>
+              <span className="text-muted-foreground max-w-xs text-xs whitespace-normal">{engine.detail}</span>
+              {selected === engine.mode && !status.available && status.reason ? (
+                <span className="text-muted-foreground max-w-xs text-xs whitespace-normal">{status.reason}</span>
+              ) : null}
+            </span>
+          </DropdownMenuRadioItem>
+        ))}
       </DropdownMenuRadioGroup>
     </>
   )
@@ -74,7 +82,9 @@ export function useVoiceEngineName(): null | string {
     return null
   }
 
-  return selectedVoiceChatMode(status) === 'gpt-live'
-    ? t.composer.voiceEngineLiveShort
-    : t.composer.voiceEngineChainedShort
+  return {
+    chained: t.composer.voiceEngineChainedShort,
+    'gpt-live': t.composer.voiceEngineLiveShort,
+    'codex-live': t.composer.voiceEngineCodexLiveShort
+  }[selectedVoiceChatMode(status)]
 }

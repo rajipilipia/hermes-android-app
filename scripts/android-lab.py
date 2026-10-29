@@ -109,7 +109,7 @@ def adb_argv(state, *args):
 
 ROOT = Path(__file__).resolve().parents[1]
 LAB = ROOT / ".cache" / "android-lab"
-SDK = Path(os.environ.get("HERMES_ANDROID_LAB_SDK", "C:/Android/Sdk"))
+SDK = Path(os.environ.get("HERMES_ANDROID_LAB_SDK", str(ROOT / ".cache" / "android-layout-sdk")))
 JDK = Path("C:/Program Files/Microsoft/jdk-21.0.8.9-hotspot")
 ADB_PORT = 5041
 
@@ -158,6 +158,8 @@ import subprocess
 import sys
 import time
 import threading
+from contextlib import contextmanager
+import hashlib
 
 sys.path.insert(0, str(ROOT / "scripts" / "android-lab"))
 from windows_owned import OwnedJob, lifecycle_lock
@@ -182,25 +184,136 @@ def avdmanager_argv(*args):
             "com.android.sdklib.tool.AvdManagerCli", *args]
 
 
-def emulator_argv(profile, console, gpu):
+def emulator_argv(profile, console, gpu, headless=False):
     if profile not in PROFILES or console < 6000 or console % 2:
         raise ValueError("invalid owned emulator profile/port")
-    return [str(SDK / "emulator" / "emulator.exe"), "-avd", PROFILES[profile][0],
-            "-ports", f"{console},{console + 1}", "-accel", "on", "-gpu", gpu,
-            "-memory", "4096", "-cores", "4", "-no-snapshot", "-no-metrics",
-            "-crash-report-mode", "disabled", "-camera-back", "none", "-camera-front", "none",
-            "-adb-path", str(SDK / "platform-tools" / "adb.exe"), "-no-boot-anim"]
+    cmd = [str(SDK / "emulator" / "emulator.exe"), "-avd", PROFILES[profile][0],
+           "-ports", f"{console},{console + 1}", "-accel", "on", "-gpu", gpu,
+           "-memory", "4096", "-cores", "4", "-no-snapshot", "-no-metrics",
+           "-crash-report-mode", "disabled", "-camera-back", "none", "-camera-front", "none",
+           "-adb-path", str(SDK / "platform-tools" / "adb.exe"), "-no-boot-anim"]
+    if headless:
+        cmd.append("-no-window")
+    return cmd
+
+
+def file_holders(path):
+    """Read Windows Restart Manager ownership; never stop or restart a process."""
+    class UniqueProcess(ctypes.Structure):
+        _fields_ = [("pid", wintypes.DWORD), ("started", wintypes.FILETIME)]
+
+    class ProcessInfo(ctypes.Structure):
+        _fields_ = [("process", UniqueProcess), ("application", wintypes.WCHAR * 256),
+                    ("service", wintypes.WCHAR * 64), ("kind", ctypes.c_int),
+                    ("status", wintypes.ULONG), ("session", wintypes.DWORD),
+                    ("restartable", wintypes.BOOL)]
+
+    api = ctypes.WinDLL("rstrtmgr", use_last_error=True)
+    api.RmStartSession.argtypes = [ctypes.POINTER(wintypes.DWORD), wintypes.DWORD, wintypes.LPWSTR]
+    api.RmRegisterResources.argtypes = [wintypes.DWORD, wintypes.UINT,
+        ctypes.POINTER(wintypes.LPCWSTR), wintypes.UINT, ctypes.POINTER(UniqueProcess),
+        wintypes.UINT, ctypes.POINTER(wintypes.LPCWSTR)]
+    api.RmGetList.argtypes = [wintypes.DWORD, ctypes.POINTER(wintypes.UINT),
+        ctypes.POINTER(wintypes.UINT), ctypes.POINTER(ProcessInfo), ctypes.POINTER(wintypes.DWORD)]
+    api.RmEndSession.argtypes = [wintypes.DWORD]
+    session, key = wintypes.DWORD(), ctypes.create_unicode_buffer(33)
+    code = api.RmStartSession(ctypes.byref(session), 0, key)
+    if code:
+        return {"processes": [], "error": f"RmStartSession:{code}", "attribution": "unproven"}
+    try:
+        resources = (wintypes.LPCWSTR * 1)(str(path.resolve()))
+        code = api.RmRegisterResources(session, 1, resources, 0, None, 0, None)
+        if code:
+            return {"processes": [], "error": f"RmRegisterResources:{code}", "attribution": "unproven"}
+        needed, count, reason = wintypes.UINT(), wintypes.UINT(), wintypes.DWORD()
+        code = api.RmGetList(session, ctypes.byref(needed), ctypes.byref(count), None, ctypes.byref(reason))
+        if code == 0 and needed.value == 0:
+            return {"processes": [], "attribution": "unproven: reader may already have closed"}
+        if code != 234 or needed.value > 1024:
+            return {"processes": [], "error": f"RmGetList:{code}", "attribution": "unproven"}
+        entries = (ProcessInfo * needed.value)()
+        count.value = needed.value
+        code = api.RmGetList(session, ctypes.byref(needed), ctypes.byref(count), entries, ctypes.byref(reason))
+        if code:
+            return {"processes": [], "error": f"RmGetList:{code}", "attribution": "unproven"}
+        processes = []
+        for entry in entries[:count.value]:
+            identity = process_identity(entry.process.pid)
+            processes.append({"pid": entry.process.pid, "exe": Path(identity["exe"]).name if identity else None,
+                              "application": entry.application, "service": entry.service})
+        return {"processes": processes, "attribution": "Windows Restart Manager snapshot"}
+    finally:
+        api.RmEndSession(session)
+
+
+@contextmanager
+def state_access(path):
+    """Serialize cooperating readers/writers, including separate CLI processes."""
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel.CreateMutexW.restype = wintypes.HANDLE
+    kernel.CreateMutexW.argtypes = [ctypes.c_void_p, wintypes.BOOL, wintypes.LPCWSTR]
+    kernel.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
+    kernel.ReleaseMutex.argtypes = [wintypes.HANDLE]
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    digest = hashlib.sha256(os.path.normcase(str(path.resolve())).encode("utf-8")).hexdigest()
+    handle = kernel.CreateMutexW(None, False, "Local\\HermesAndroidLabState_" + digest)
+    if not handle:
+        raise ctypes.WinError(ctypes.get_last_error())
+    acquired = False
+    try:
+        result = kernel.WaitForSingleObject(handle, 1000)
+        if result not in (0, 0x80):  # WAIT_OBJECT_0 or an abandoned, now-owned mutex.
+            raise RuntimeError(f"state access lock failed or timed out: {result}")
+        acquired = True
+        yield
+    finally:
+        if acquired:
+            kernel.ReleaseMutex(handle)
+        kernel.CloseHandle(handle)
 
 
 def save_json(path, value):
+    with state_access(path):
+        return _save_json_locked(path, value)
+
+
+def _save_json_locked(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + f".{os.getpid()}.{threading.get_ident()}.writing")
-    tmp.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
-    tmp.replace(path)
+    retries = 0
+    deadline = time.monotonic() + 0.5
+    try:
+        tmp.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+        while True:
+            try:
+                os.replace(tmp, path)
+                return retries
+            except PermissionError as exc:
+                if os.name != "nt" or exc.winerror not in (5, 32, 33):
+                    raise
+                holders = file_holders(path) if retries == 0 else {"processes": [], "attribution": "see first failure"}
+                exhausted = retries >= 5 or time.monotonic() >= deadline
+                if not exhausted:
+                    retries += 1
+                print(json.dumps({"event": "state_replace_failed" if exhausted else "state_replace_retry",
+                    "writer_pid": os.getpid(), "file": path.name, "winerror": exc.winerror,
+                    "retry": retries, "holders": holders}), file=sys.stderr, flush=True)
+                if exhausted:
+                    raise
+                time.sleep(min(0.025, max(0, deadline - time.monotonic())))
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
+@contextmanager
+def state_reader(path):
+    with state_access(path), path.open("r", encoding="utf-8") as stream:
+        yield stream
 
 
 def load_state():
-    state = json.loads(STATE.read_text(encoding="utf-8"))
+    with state_reader(STATE) as stream:
+        state = json.load(stream)
     if state.get("root") != str(ROOT) or state.get("adb_port") != ADB_PORT:
         raise RuntimeError("state is not owned by this repository")
     adb_argv(state, "get-state")
@@ -241,7 +354,7 @@ def prepare():
         config = avd / "config.ini"
         original = config.read_text(encoding="utf-8")
         pairs = dict(line.split("=", 1) for line in original.splitlines() if "=" in line)
-        pairs.update({"hw.ramSize": "4096", "hw.cpu.ncore": "4", "hw.keyboard": "no" if profile == "phone" else "yes",
+        pairs.update({"hw.ramSize": "4096", "hw.cpu.ncore": "4", "hw.keyboard": "yes",
                       "hw.camera.back": "none", "hw.camera.front": "none",
                       "hw.audioInput": "yes", "hw.audioOutput": "yes",
                       "fastboot.forceColdBoot": "yes"})
@@ -356,20 +469,27 @@ def cleanup(state, job=None):
         for identity in reversed(state.get("emulator_processes", [])):
             terminate_owned(identity)
         terminate_owned(state.get("adb"))
-    state["status"] = "stopped"
-    state["cleanup_remaining_pids"] = [i["pid"] for i in state.get("emulator_processes", []) +
-                                       ([state["adb"]] if state.get("adb") else []) if same_process(i)]
-    save_json(STATE, state)
+    # An empty Windows job can precede the process exit record. Check both.
+    deadline = time.monotonic() + 10
+    while True:
+        state["cleanup_remaining_pids"] = [i["pid"] for i in state.get("emulator_processes", []) +
+                                           ([state["adb"]] if state.get("adb") else []) if same_process(i)]
+        if not state["cleanup_remaining_pids"] or time.monotonic() >= deadline:
+            break
+        time.sleep(0.05)
     if state["cleanup_remaining_pids"]:
+        save_json(STATE, state)
         raise RuntimeError("some owned processes remain after cleanup")
+    state["status"] = "stopped"
+    save_json(STATE, state)
 
 
-def start(profile, console, gpu, boot_timeout):
+def start(profile, console, gpu, boot_timeout, headless=False):
     with lifecycle_lock(LAB / "lifecycle.lock"), OwnedJob() as job:
-        _start(profile, console, gpu, boot_timeout, job)
+        _start(profile, console, gpu, boot_timeout, job, headless=headless)
 
 
-def _start(profile, console, gpu, boot_timeout, job):
+def _start(profile, console, gpu, boot_timeout, job, headless=False):
     prepare()
     if STATE.exists():
         previous = load_state()
@@ -385,6 +505,7 @@ def _start(profile, console, gpu, boot_timeout, job):
     control.listen(1)
     run_id = str(time.time_ns())
     state = {"root": str(ROOT), "run_id": run_id, "profile": profile, "status": "starting",
+             "gpu": gpu, "headless": headless,
              "adb_port": ADB_PORT, "console_port": console, "serial": f"emulator-{console}",
              "control_port": control.getsockname()[1], "supervisor": process_identity(os.getpid()),
              "emulator_processes": [], "logs": {"adb": str(LAB / "logs" / f"adb-{run_id}.log"),
@@ -408,7 +529,7 @@ def _start(profile, console, gpu, boot_timeout, job):
                     request = conn.recv(64)
                     if request == b"stop\n":
                         stop_requested.set()
-                        if cleanup_done.wait(45):
+                        if cleanup_done.wait(45) and state.get("status") == "stopped":
                             conn.sendall(b"STOPPED\n")
                         return
                     conn.sendall(b"INVALID\n")
@@ -433,7 +554,7 @@ def _start(profile, console, gpu, boot_timeout, job):
         require_free_ports([console, console + 1])
         if stop_requested.is_set():
             return
-        emulator_process = job.spawn(emulator_argv(profile, console, gpu), env=child_env(),
+        emulator_process = job.spawn(emulator_argv(profile, console, gpu, headless=headless), env=child_env(),
                                      cwd=ROOT, stdin=subprocess.DEVNULL,
                                      stdout=emu_log, stderr=subprocess.STDOUT)
         identity = process_identity(emulator_process.pid)
@@ -518,7 +639,9 @@ def main():
     parser.add_argument("action", choices=("prepare", "start", "status", "stop", "readiness"))
     parser.add_argument("--profile", choices=PROFILES, default="phone")
     parser.add_argument("--console-port", type=int, default=6000)
-    parser.add_argument("--gpu", choices=("auto", "software", "swiftshader"), default="auto")
+    parser.add_argument("--gpu", choices=("auto", "host", "angle_indirect", "swiftshader_indirect",
+                                         "software", "swiftshader"), default="host")
+    parser.add_argument("--headless", action="store_true", help="run without a PC window or foreground input")
     parser.add_argument("--boot-timeout", type=int, default=300)
     args = parser.parse_args()
     if args.console_port < 6000 or args.console_port > 65000 or args.console_port % 2:
@@ -526,7 +649,7 @@ def main():
     if not 30 <= args.boot_timeout <= 600:
         parser.error("boot timeout must be in 30..600 seconds")
     if args.action == "start":
-        start(args.profile, args.console_port, args.gpu, args.boot_timeout)
+        start(args.profile, args.console_port, args.gpu, args.boot_timeout, headless=args.headless)
         return
     if args.action == "prepare":
         with lifecycle_lock(LAB / "lifecycle.lock"):

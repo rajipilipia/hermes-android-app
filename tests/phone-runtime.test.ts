@@ -55,3 +55,9 @@ it("releases work and subscriptions on page replacement", () => {
   expect(prompt).toHaveBeenCalledTimes(count); expect(remember).not.toHaveBeenCalled();
   expect(JSON.parse(prompt.mock.calls.at(-1)![1])).toEqual({active:false});
 });
+it("does not call the blocked prompt during pagehide but still releases subscriptions", () => {
+  dispose = initializePhoneRuntime(); $busy.set(true);
+  const count = prompt.mock.calls.length;
+  window.dispatchEvent(new Event("pagehide")); dispose = undefined;
+  $busy.set(false); expect(prompt).toHaveBeenCalledTimes(count);
+});

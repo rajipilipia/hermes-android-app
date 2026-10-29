@@ -11,6 +11,8 @@ type Schema = {
   pattern?: string;
   minimum?: number;
   maximum?: number;
+  items?: Schema;
+  maxItems?: number;
 };
 type Operation = {
   id: string;
@@ -39,6 +41,10 @@ function validate(value: unknown, schema: Schema): void {
         if (schema.additionalProperties === false) fail();
       } else validate(item, child);
     }
+  } else if (schema.type === "array") {
+    // Codex Live voice history and debug events: bounded lists of checked items.
+    if (!Array.isArray(value) || value.length > (schema.maxItems ?? 0)) return fail();
+    for (const item of value) validate(item, schema.items ?? { enum: [] });
   } else if (schema.type === "string") {
     if (
       typeof value !== "string" ||

@@ -34,6 +34,21 @@ vi.mock('@/hermes', async () => ({
     throw new Error('Optional STT warm-up unsupported in Android fixture')
   })
 }))
+// The pinned Desktop now captures the session owner (captureSubmissionDestination) and
+// sends session RPCs (file.attach, prompt.submit) through the owner-routed registry
+// dispatcher, which needs live registry sockets. A synthetic fixture has none, so the
+// routed hop is replaced by the fixture's own gateway function. Owner values are still
+// seeded and still checked by the media code; only the socket hop is substituted.
+vi.mock('@/store/session-request-router', async importOriginal => ({
+  ...(await importOriginal<typeof import('@/store/session-request-router')>()),
+  requestForSessionProfile: (
+    _owner: unknown,
+    ambient: (method: string, params?: Record<string, unknown>, timeoutMs?: number) => Promise<unknown>,
+    method: string,
+    params: Record<string, unknown> = {},
+    timeoutMs?: number
+  ) => (timeoutMs === undefined ? ambient(method, params) : ambient(method, params, timeoutMs))
+}))
 vi.mock('@/lib/voice-client-direct', () => ({
   transcribeAudioClientDirect: vi.fn(async () => {
     throw new Error('Provider/config access forbidden in Android fixture')
@@ -134,8 +149,29 @@ function promptHook(gateway = requestGateway, active: string | null = null) {
   )
   return { ...result, selectedStoredSessionIdRef, activeSessionIdRef }
 }
+// Node 26 exposes a host localStorage getter even in jsdom, so window.localStorage is
+// undefined. The pinned Desktop submit path now journals prepared submissions in it.
+// Use isolated in-memory browser storage (same approach as tests/profile-restoration.test.ts).
+function createMemoryStorage() {
+  const values = new Map<string, string>()
+  return {
+    get length() {
+      return values.size
+    },
+    key: (index: number) => [...values.keys()][index] ?? null,
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      values.set(key, String(value))
+    },
+    removeItem: (key: string) => {
+      values.delete(key)
+    },
+    clear: () => values.clear()
+  }
+}
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubGlobal('localStorage', createMemoryStorage())
   _resetSessionOwnerHintsForTests({ storage: true })
   $composerAttachments.set([])
   $connection.set(null)
@@ -422,8 +458,11 @@ describe('pinned Android renderer media — synthetic host fixture', () => {
       .mockImplementationOnce(() => first.promise)
       .mockImplementationOnce(() => second.promise)
     installHost({ androidMedia: { isLocalPath: () => true, uploadAttachment } })
-    const gateway = vi.fn(async (method: string) => {
-      if (method === 'prompt.submit') return { status: 'streaming', user_row_id: 501 } as never
+    const gateway = vi.fn(async (method: string, params?: Record<string, unknown>) => {
+      // The pinned Desktop sends a client submission_id and accepts only an admission
+      // receipt that echoes it with a queued/started/terminal/unknown status.
+      if (method === 'prompt.submit')
+        return { status: 'started', submission_id: params?.submission_id, user_row_id: 501 } as never
       throw new Error(`Unexpected fixture gateway operation: ${method}`)
     })
     const { result } = promptHook(gateway)
@@ -453,7 +492,8 @@ describe('pinned Android renderer media — synthetic host fixture', () => {
       'prompt.submit',
       {
         session_id: runtimeId,
-        text: `${fileComplete.ref_text}\n@file:attachments/other.txt\n\nRead both`
+        text: `${fileComplete.ref_text}\n@file:attachments/other.txt\n\nRead both`,
+        submission_id: expect.any(String)
       },
       1_800_000
     )

@@ -4,7 +4,9 @@ import importlib.util
 from pathlib import Path
 import sys
 
-ONBOARDING_SHA256 = '35d2c06e4515db01afe5d118a27cebfb7c50f2bff061a8bb4d2c29a4861d290e'
+# Pin follows source 925ede7. That source now imports Path itself, so the
+# module.Path shim below is harmless and kept only to keep the load path unchanged.
+ONBOARDING_SHA256 = '30eeeb07ada27c311e4d711bdc1e2626a222649954d64cd7aa670e98927ed815'
 
 
 def load_pinned_onboarding(upstream):

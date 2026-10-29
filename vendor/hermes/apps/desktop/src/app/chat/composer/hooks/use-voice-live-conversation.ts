@@ -1,8 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+import { resolveOwnerNow } from '@/api/client'
 import { useI18n } from '@/i18n'
 import { sanitizeTextForSpeech } from '@/lib/speech-text'
-import { type LiveHistoryMessage, type LiveTranscriptFragment, VoiceLiveSession } from '@/lib/voice-live'
+import {
+  fetchVoiceLiveStatus,
+  type LiveHistoryMessage,
+  type LiveTranscriptFragment,
+  VoiceLiveSession
+} from '@/lib/voice-live'
+import type { VoiceLiveCloseDetails } from '@/lib/voice-live-debug'
+import { codexVoiceIntent, type VoiceHandoff, type VoiceTaskSnapshot } from '@/lib/voice-live-task'
+import { CodexTaskLink } from '@/lib/voice-live-task-link'
 import { isVoiceStopCommand } from '@/lib/voice-stop-word'
 import { notify, notifyError } from '@/store/notifications'
 
@@ -24,6 +33,10 @@ interface PendingVoiceResponse {
 }
 
 interface VoiceLiveConversationOptions {
+  sessionId?: string | null
+  /** Durable chat/lineage identity; null is a draft awaiting first adoption. */
+  queueSessionKey?: string | null
+  taskRequest?: (action?: string, taskId?: string, text?: string) => Promise<VoiceTaskSnapshot>
   busy: boolean
   enabled: boolean
   onFatalError?: () => void
@@ -33,8 +46,10 @@ interface VoiceLiveConversationOptions {
   onStopWord?: () => void
   /** Submit a Hermes turn: `text` is the user's last words (the bubble and the
    *  persisted row), `voiceContext` the recent spoken exchange for the model. */
-  onSubmit: (text: string, voiceContext: string) => Promise<void> | void
+  onSubmit: (text: string, voiceContext: string, handoff?: VoiceHandoff) => Promise<void> | void
   pendingResponse: () => PendingVoiceResponse | null
+  /** Codex returns the final bubble once, without replaying tool narration. */
+  pendingFinalResponse?: () => PendingVoiceResponse | null
   consumePendingResponse: () => void
   /** Text turns to seed the live model with when the session opens. */
   seedHistory: () => LiveHistoryMessage[]
@@ -47,15 +62,15 @@ interface VoiceLiveConversationOptions {
  *  last said (the persisted user row), `context` the recent spoken exchange
  *  that rides the model input only (see tools/voice_live.py). */
 export function delegationPrompt(context: LiveTranscriptFragment[]): { context: string; prompt: string } {
-  const turns: Array<{ speaker: 'assistant' | 'user'; text: string }> = []
+  const turns: Array<{ speaker: 'assistant' | 'user'; text: string; turnId?: string }> = []
 
   for (const fragment of context) {
     const last = turns.at(-1)
 
-    if (last && last.speaker === fragment.speaker) {
+    if (last && last.speaker === fragment.speaker && last.turnId === fragment.turnId) {
       last.text += fragment.text
     } else {
-      turns.push({ speaker: fragment.speaker, text: fragment.text })
+      turns.push({ speaker: fragment.speaker, text: fragment.text, turnId: fragment.turnId })
     }
   }
 
@@ -102,6 +117,9 @@ export function liveEndedMessage(
  * Hermes. There is no `transcribing` phase: the voice model owns speech.
  */
 export function useVoiceLiveConversation({
+  sessionId,
+  queueSessionKey,
+  taskRequest,
   busy,
   enabled,
   onFatalError,
@@ -109,6 +127,7 @@ export function useVoiceLiveConversation({
   onStopWord,
   onSubmit,
   pendingResponse,
+  pendingFinalResponse,
   consumePendingResponse,
   seedHistory,
   activeToolLabel,
@@ -123,6 +142,7 @@ export function useVoiceLiveConversation({
   // restart the feed loop, and a ref write alone does not re-render.
   const [activeDelegation, setActiveDelegation] = useState<null | string>(null)
   const sessionRef = useRef<null | VoiceLiveSession>(null)
+  const taskLinkRef = useRef<CodexTaskLink | null>(null)
   // The scope's session owner (a Bot's own connection + profile) picks the
   // GPT-Live backend and voice; a ref keeps the long-lived start closures
   // reading the current value.
@@ -150,6 +170,7 @@ export function useVoiceLiveConversation({
   const wasEnabledRef = useRef(enabled)
 
   const latest = useRef({
+    taskRequest,
     activeToolLabel,
     beforeMicOpen,
     onFatalError,
@@ -157,11 +178,13 @@ export function useVoiceLiveConversation({
     onStopWord,
     onSubmit,
     pendingResponse,
+    pendingFinalResponse,
     consumePendingResponse,
     seedHistory
   })
 
   latest.current = {
+    taskRequest,
     activeToolLabel,
     beforeMicOpen,
     onFatalError,
@@ -169,6 +192,7 @@ export function useVoiceLiveConversation({
     onStopWord,
     onSubmit,
     pendingResponse,
+    pendingFinalResponse,
     consumePendingResponse,
     seedHistory
   }
@@ -204,7 +228,9 @@ export function useVoiceLiveConversation({
     }
   }, [])
 
-  const end = useCallback(async () => {
+  const end = useCallback(async (details: VoiceLiveCloseDetails = { close_trigger: 'requested' }) => {
+    taskLinkRef.current?.close()
+    taskLinkRef.current = null
     startEpochRef.current += 1
     startingRef.current = false
 
@@ -220,7 +246,7 @@ export function useVoiceLiveConversation({
     spokenResponseIdRef.current = null
     spokenLengthRef.current = 0
     speakingRef.current = false
-    session?.close()
+    session?.close(details)
     setMuted(false)
     setLevel(0)
     setStatus('idle')
@@ -246,6 +272,11 @@ export function useVoiceLiveConversation({
       return
     }
 
+    const owner = resolveOwnerNow(ownerRef.current)
+    const liveStatus = await fetchVoiceLiveStatus(owner)
+
+    if (!enabledRef.current || startEpochRef.current !== epoch) {return}
+
     const session = new VoiceLiveSession(
       {
         // The voice model answers a bare "stop" itself (it just goes quiet) and
@@ -253,6 +284,22 @@ export function useVoiceLiveConversation({
         // transcript once the utterance settles.
         onTranscript: fragment => {
           if (fragment.speaker !== 'user') {
+            return
+          }
+
+          if (sessionRef.current !== session) {
+            return
+          }
+
+          if (session.finalResultOnly) {
+            const intent = codexVoiceIntent(fragment.text)
+
+            if (intent === 'silence' || intent === 'stop') {session.silence()}
+
+            if (fragment.final && ['silence', 'stop', 'cancel', 'end'].includes(intent)) {
+              void taskLinkRef.current?.handle(fragment.text, '', undefined, fragment.turnId).catch(error => notifyError(error, voiceCopy.liveError))
+            } else if (fragment.final) {session.resumeSpeech()}
+
             return
           }
 
@@ -268,7 +315,7 @@ export function useVoiceLiveConversation({
             userUtteranceRef.current = ''
 
             if (sessionRef.current === session && isVoiceStopCommand(utterance)) {
-              void end()
+              void end({ close_trigger: 'spoken_end' })
               latest.current.onStopWord?.()
             }
           }, UTTERANCE_SETTLE_MS)
@@ -278,11 +325,13 @@ export function useVoiceLiveConversation({
             return
           }
 
+          taskLinkRef.current?.close()
+          taskLinkRef.current = null
           sessionRef.current = null
           setDelegation(null)
           setStatus('idle')
 
-          if (reason !== 'close_requested') {
+          if (reason !== 'close_requested' && reason !== 'startup_failed') {
             notify({
               kind: 'warning',
               message: liveEndedMessage(reason, usageSeconds, voiceCopy),
@@ -291,16 +340,26 @@ export function useVoiceLiveConversation({
             latest.current.onFatalError?.()
           }
         },
-        onDelegation: (delegationId, context) => {
+        onDelegation: (delegationId, context, handoff) => {
           if (sessionRef.current !== session) {
             return
           }
 
           const { context: voiceContext, prompt } = delegationPrompt(context)
 
+          if (session.finalResultOnly) {
+            void taskLinkRef.current?.handle(prompt, voiceContext, handoff, handoff?.user_turn_id).catch(error => {
+              notifyError(error, voiceCopy.liveDelegationFailed)
+              session.delegationFailed(delegationId)
+              session.speak(delegationId, 'Hermes could not verify or accept that request. No automatic retry will run. Check the chat.', 'error')
+            })
+
+            return
+          }
+
           // A spoken stop command ends the conversation instead of becoming a turn.
           if (prompt && isVoiceStopCommand(prompt)) {
-            void end()
+            void end({ close_trigger: 'spoken_end' })
             latest.current.onStopWord?.()
 
             return
@@ -309,6 +368,7 @@ export function useVoiceLiveConversation({
           // A newer request supersedes an in-flight turn: stop it so the answer
           // the voice speaks is for what the user asked last.
           if (busyRef.current) {
+            session.interrupted()
             void latest.current.onInterrupt?.()
           }
 
@@ -321,6 +381,11 @@ export function useVoiceLiveConversation({
           latest.current.consumePendingResponse()
           refreshStatus()
           void Promise.resolve(latest.current.onSubmit(prompt, voiceContext)).catch(error => {
+            if (sessionRef.current !== session || delegationRef.current !== delegationId) {
+              return
+            }
+
+            session.delegationFailed(delegationId)
             notifyError(error, voiceCopy.liveDelegationFailed)
             session.speak(delegationId, 'Sorry, I could not reach Hermes for that request.')
             setDelegation(null)
@@ -336,10 +401,30 @@ export function useVoiceLiveConversation({
           refreshStatus()
         }
       },
-      ownerRef.current
+      owner,
+      liveStatus?.mode === 'codex-live' && liveStatus.debug === true
     )
 
     sessionRef.current = session
+
+    if (liveStatus?.mode === 'codex-live') {
+      taskLinkRef.current = new CodexTaskLink({
+        session,
+        activeToolLabel: () => latest.current.activeToolLabel?.() ?? null,
+        request: (action, taskId, text) => {
+          const request = latest.current.taskRequest
+
+          if (!request) {return Promise.reject(new Error('Voice task continuity is unavailable'))}
+
+          return request(action, taskId, text)
+        },
+        submit: async (text, context, handoff) => {await latest.current.onSubmit(text, context, handoff)},
+        notice: message => notify({kind: 'info', message}),
+        end: () => {void end({ close_trigger: 'spoken_end' }); latest.current.onStopWord?.()},
+        onError: error => notifyError(error, voiceCopy.liveError)
+      })
+    }
+
     startingRef.current = false
     setMuted(false)
     setStatus('thinking')
@@ -348,7 +433,7 @@ export function useVoiceLiveConversation({
       await session.start(latest.current.seedHistory())
 
       if (sessionRef.current !== session || startEpochRef.current !== epoch) {
-        session.close()
+        session.close({ close_trigger: 'startup_superseded' })
 
         return
       }
@@ -359,7 +444,7 @@ export function useVoiceLiveConversation({
         sessionRef.current = null
       }
 
-      session.close()
+      session.close({ close_trigger: 'startup_failed' })
 
       if (startEpochRef.current !== epoch) {
         return
@@ -382,7 +467,7 @@ export function useVoiceLiveConversation({
     const session = sessionRef.current
     const delegationId = delegationRef.current
 
-    if (!session || !delegationId) {
+    if (!session || session.finalResultOnly || !delegationId) {
       return undefined
     }
 
@@ -402,7 +487,10 @@ export function useVoiceLiveConversation({
         session.think(delegationId, `Hermes is working: ${tool}. Not done yet.`)
       }
 
-      const response = latest.current.pendingResponse()
+      const response =
+        session.finalResultOnly && latest.current.pendingFinalResponse
+          ? latest.current.pendingFinalResponse()
+          : latest.current.pendingResponse()
 
       if (response) {
         turnObservedRef.current = true
@@ -416,6 +504,10 @@ export function useVoiceLiveConversation({
 
         // Append only completed sentences while streaming; the tail lands on settle.
         if (response.pending || busyRef.current) {
+          if (session.finalResultOnly) {
+            return
+          }
+
           const boundary = spoken.lastIndexOf('. ', spoken.length - 2)
           const cut = boundary > spokenLengthRef.current ? boundary + 1 : spokenLengthRef.current
 
@@ -446,8 +538,17 @@ export function useVoiceLiveConversation({
         (turnObservedRef.current || Date.now() - submittedAtRef.current > SUBMIT_SETTLE_GRACE_MS)
       ) {
         // Turn settled without a speakable reply (tool-only, error, interrupted).
+        session.delegationFailed(delegationId)
+
         if (spokenLengthRef.current === 0) {
-          session.think(delegationId, 'Hermes finished that request without a spoken result.')
+          if (session.finalResultOnly) {
+            session.speak(
+              delegationId,
+              'Hermes returned no answer. The task may have failed or been interrupted; check the chat before assuming it completed.'
+            )
+          } else {
+            session.think(delegationId, 'Hermes finished that request without a spoken result.')
+          }
         }
 
         setDelegation(null)
@@ -482,13 +583,37 @@ export function useVoiceLiveConversation({
     }
 
     if (!enabled && wasEnabledRef.current) {
-      void end()
+      void end({ close_trigger: 'disabled' })
     }
 
     wasEnabledRef.current = enabled
   }, [enabled, end, start])
 
-  useEffect(() => () => void end(), [end])
+  const scope = resolveOwnerNow(ownerRef.current)
+  // Untagged connections use the local pool; publishing its explicit name is
+  // not a backend switch. Profiles and all other connections stay distinct.
+  const connectionId = scope.connectionId ?? 'local'
+  const profile = scope.profile
+  const scopeKey = JSON.stringify([connectionId, profile])
+  // Runtime ids rotate/rebind within a chat. An explicit null durable key is
+  // a draft, even while the previous runtime id is still being cleared.
+  const conversationKey = queueSessionKey === undefined ? sessionId : queueSessionKey
+  const previousScope = useRef({scopeKey, conversationKey, connectionId, profile})
+  // eslint-disable-next-line no-restricted-syntax -- previous-owner transition token, not an atom mirror
+  useEffect(() => {
+    const previous = previousScope.current
+
+    if (previous.scopeKey !== scopeKey || (previous.conversationKey && previous.conversationKey !== conversationKey)) {
+      void end({ close_trigger: 'scope_changed',
+        conversation_changed: previous.conversationKey !== conversationKey,
+        connection_changed: previous.connectionId !== connectionId,
+        profile_changed: previous.profile !== profile })
+    }
+
+    previousScope.current = {scopeKey, conversationKey, connectionId, profile}
+  }, [end, scopeKey, conversationKey, connectionId, profile])
+
+  useEffect(() => () => void end({ close_trigger: 'unmount' }), [end])
 
   return { end, level, muted, start, status, stopTurn, toggleMute }
 }

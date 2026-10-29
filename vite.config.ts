@@ -3,6 +3,14 @@ import { stripBundledFontQuery } from "./src/desktop/bundled-assets.ts";
 import { patchStatusbarSource } from "./src/desktop/statusbar-defaults.ts";
 import { patchContextMenuTouchSource } from "./src/desktop/context-menu-touch.ts";
 import { patchAndroidCompatibility } from "./src/desktop/android-compat.ts";
+import { patchComposerNativeSource } from "./src/desktop/composer-native.ts";
+import { patchAccessibilityLabels } from "./src/desktop/accessibility-labels.ts";
+import { patchNarrowRightPane } from "./src/desktop/narrow-right-pane.ts";
+import { patchPhonePanes } from "./src/desktop/phone-panes.ts";
+import { patchStableTileRender } from "./src/desktop/stable-tile-render.ts";
+import { patchPhoneConnectionScope } from "./src/desktop/phone-connection-scope.ts";
+import { patchHideSweepThrottle } from "./src/desktop/hide-sweep-throttle.ts";
+import { patchVoiceEndDiagnostics } from "./src/desktop/voice-end-diag.ts";
 import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
@@ -32,6 +40,62 @@ export default defineConfig({
       },
     },
     // Exact-source adapters must run before Babel rewrites JSX and hook bodies.
+    {
+      name: "android-native-composer",
+      enforce: "pre",
+      transform(code, id) {
+        return patchComposerNativeSource(id, code);
+      },
+    },
+    {
+      name: "android-accessibility-labels",
+      enforce: "pre",
+      transform(code, id) {
+        return patchAccessibilityLabels(id, code);
+      },
+    },
+    {
+      name: "android-narrow-right-pane",
+      enforce: "pre",
+      transform(code, id) {
+        return patchNarrowRightPane(id, code);
+      },
+    },
+    {
+      name: "android-phone-connection-scope",
+      enforce: "pre",
+      transform(code, id) {
+        return patchPhoneConnectionScope(id, code);
+      },
+    },
+    {
+      name: "android-phone-panes",
+      enforce: "pre",
+      transform(code, id) {
+        return patchPhonePanes(id, code);
+      },
+    },
+    {
+      name: "android-stable-tile-render",
+      enforce: "pre",
+      transform(code, id) {
+        return patchStableTileRender(id, code);
+      },
+    },
+    {
+      name: "android-hide-sweep-throttle",
+      enforce: "pre",
+      transform(code, id) {
+        return patchHideSweepThrottle(id, code);
+      },
+    },
+    {
+      name: "android-voice-end-diag",
+      enforce: "pre",
+      transform(code, id) {
+        return patchVoiceEndDiagnostics(id, code);
+      },
+    },
     {
       name: "android-statusbar-defaults",
       enforce: "pre",

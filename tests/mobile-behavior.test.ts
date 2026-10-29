@@ -306,6 +306,23 @@ describe("Back closes the browser pane on a phone (R1 stage 1)", () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it("closes a file, PDF or image preview with the active preview tab's Close (no pane host)", () => {
+    document.body.innerHTML =
+      '<div data-tree-tab="preview-tile:old" aria-selected="false"><button id="old"><i class="codicon codicon-close"></i></button></div>' +
+      '<div data-tree-tab="preview-tile:file1" aria-selected="true"><button id="tabclose"><i class="codicon codicon-close"></i></button></div>' +
+      '<div data-tree-tab="workspace" aria-selected="false"><button id="other"><i class="codicon codicon-close"></i></button></div>';
+    const closed = vi.fn(), other = vi.fn();
+    document.getElementById("tabclose")!.addEventListener("click", closed);
+    document.getElementById("old")!.addEventListener("click", other);
+    document.getElementById("other")!.addEventListener("click", other);
+    expect(back()).toBe(true);
+    expect(closed).toHaveBeenCalledTimes(1);
+    expect(other).not.toHaveBeenCalled();
+    // No preview tab selected: Back is not claimed.
+    document.querySelector('[data-tree-tab="preview-tile:file1"]')!.setAttribute("aria-selected", "false");
+    expect(back()).toBe(false);
+  });
+
   it("leaves Back alone with a menu or dialog open, a hidden pane, or a wide screen", () => {
     document.body.insertAdjacentHTML("beforeend", '<div role="menu"></div>');
     expect(back()).toBe(false);

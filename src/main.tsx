@@ -8,6 +8,7 @@ import { pcAuth } from "./pc-auth";
 import { installSignInControl, observePcAuth } from "./desktop/auth-control";
 import { currentServer, nativeServerSetup } from "./desktop/server-setup";
 import { installSocketDiag, watchGatewayState } from "./desktop/stability";
+import { installVerboseLogging } from "./desktop/verbose";
 import { installWebviewTag } from "./desktop/webview-tag";
 import { request as requestBrowser } from "./desktop/native-browser";
 import { startDesktopWithRecovery } from "./desktop/startup-recovery";
@@ -48,6 +49,8 @@ if (!currentServer()) {
   installMobile();
   // Before any socket exists: connection open/close timings for stability rounds (observe only).
   installSocketDiag();
+  // Verbose taps, routes and errors for phone debugging (observe only, structure only).
+  installVerboseLogging();
   startDesktopWithRecovery({
     root: document.getElementById("root")!,
     createHost: () => installDesktopHost({ auth: observePcAuth(pcAuth, signIn), signedOut: restart }),

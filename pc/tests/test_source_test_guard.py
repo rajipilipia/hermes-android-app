@@ -217,7 +217,7 @@ class SourceTestGuard(unittest.TestCase):
         result=subprocess.run(['git','-C','C:/example/hermes-agent','rev-parse','HEAD'],
                               capture_output=True,text=True,timeout=15)
         self.assertEqual(result.returncode,0,result.stderr)
-        self.assertEqual(result.stdout.strip(),'93ac19694ea0c4cc1e1661ff37c2a171d96a1bc0')
+        self.assertEqual(result.stdout.strip(),'925ede7741ffbbde27b50ce6b1903465302e2576')
         result=subprocess.run(['git','-C','C:/example/hermes-agent','status','--porcelain','--untracked-files=no'],
                               capture_output=True,text=True,timeout=15)
         self.assertEqual(result.returncode,0,result.stderr)

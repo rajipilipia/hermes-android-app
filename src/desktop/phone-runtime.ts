@@ -36,11 +36,12 @@ export function initializePhoneRuntime(): () => void {
     if ((event as CustomEvent<{state?: string}>).detail?.state === "resume") { last = undefined; update(); }
   };
   window.addEventListener("hermes:native-lifecycle", resume);
-  const dispose = () => {
+  const dispose = (event?: Event) => {
     remember();subscriptions.forEach(stop => stop());
     window.removeEventListener("hermes:native-lifecycle", resume);
     window.removeEventListener("pagehide", dispose);
-    window.prompt("hermes.android.work.v1", JSON.stringify({ active: false }));
+    // Chromium blocks prompt() during pagehide; native releases work at the next document start (MainActivity.onPageStarted).
+    if (event?.type !== "pagehide") window.prompt("hermes.android.work.v1", JSON.stringify({ active: false }));
     document.getElementById("hermes-background-unavailable")?.remove();
   };
   window.addEventListener("pagehide", dispose, { once: true });

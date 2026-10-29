@@ -267,17 +267,39 @@ export function installNativeTextSelection(win: Window & typeof globalThis = win
   };
 }
 
-/** Android Back on a phone with Desktop's browser pane open (it fills the screen there): after the
- *  page's own history (native goes back first), Back closes the pane with Desktop's own Close
- *  button, like closing a sheet, instead of leaving the app. A menu, dialog or drawer open over it
+/** Phone Enter in a Desktop composer makes a new line (the Send button sends; see
+ *  composer-native.ts). The keyboard's Enter arrives as a native insertParagraph, which
+ *  Desktop's editor cleanup drops as an empty block, so it is turned into the same line break
+ *  Desktop already inserts for Shift+Enter. Mouse/keyboard Desktop never reaches this. */
+export function installComposerNewline(win: Window & typeof globalThis = window): () => void {
+  const onBeforeInput = (event: Event) => {
+    // A non-cancelable event (mid-composition) keeps its own break; adding one would double it.
+    if ((event as InputEvent).inputType !== "insertParagraph" || !event.cancelable) return;
+    const target = event.target as Element | null;
+    if (!target?.closest?.('[data-slot="composer-rich-input"]')) return;
+    event.preventDefault();
+    win.document.execCommand("insertLineBreak");
+  };
+  win.document.addEventListener("beforeinput", onBeforeInput, true);
+  return () => win.document.removeEventListener("beforeinput", onBeforeInput, true);
+}
+
+/** Android Back on a phone with a Desktop preview open (browser, HTML, file, PDF or image; it fills
+ *  the screen there): after the page's own history (native goes back first), Back closes the
+ *  preview with Desktop's own Close button, like closing a sheet, instead of leaving the app. A menu, dialog or drawer open over it
  *  closes first (Escape, as before). Wide screens keep Desktop's behavior. */
 export function installPaneBack(win: Window & typeof globalThis = window): () => void {
   const onBack = (event: Event) => {
     if (win.innerWidth >= 640) return;
     const doc = win.document;
     if (doc.querySelector('[role="dialog"], [role="menu"], [role="listbox"], [data-narrow-overlay]')) return;
-    const pane = doc.querySelector<HTMLElement>('[data-pane-host^="preview-tile:"]:not([inert])');
-    const close = [...(pane?.querySelectorAll<HTMLElement>("button") ?? [])].find((button) => button.querySelector(".codicon-close"));
+    // Browser/HTML panes carry their own Close in the pane bar. File, PDF and image previews have
+    // none inside the pane: their Close is the "x" of the active preview tab in the tab strip.
+    const closeIn = (root: Element | null) =>
+      [...(root?.querySelectorAll<HTMLElement>("button") ?? [])].find((button) => button.querySelector(".codicon-close"));
+    const close =
+      closeIn(doc.querySelector('[data-pane-host^="preview-tile:"]:not([inert])')) ??
+      closeIn(doc.querySelector('[data-tree-tab^="preview-tile:"][aria-selected="true"]'));
     if (!close) return;
     event.preventDefault();
     close.click();
@@ -290,6 +312,6 @@ export function installMobile(win: Window & typeof globalThis = window): () => v
   const touch = !!win.matchMedia?.("(any-pointer: coarse)").matches;
   if (!touch) return () => {};
   win.document.documentElement.dataset.androidTouch = "";
-  const stops = [installSingleScreenLayout(win), installKeyboardGuard(win), installOverlayDismiss(win), installPauseBlur(win), installBubbleTapFocus(win), installNativeTextSelection(win), installPaneBack(win)];
+  const stops = [installSingleScreenLayout(win), installKeyboardGuard(win), installOverlayDismiss(win), installPauseBlur(win), installBubbleTapFocus(win), installNativeTextSelection(win), installPaneBack(win), installComposerNewline(win)];
   return () => stops.forEach((stop) => stop());
 }

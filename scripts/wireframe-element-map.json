@@ -1,0 +1,719 @@
+{
+  "version": 2,
+  "geometry": "DOM only. 540 x 1171 CSS pixels at DPR 2 = 1080 x 2342 output pixels.",
+  "rules": [
+    {
+      "id": "TB-1",
+      "name": "Drawer toggle",
+      "selector": "button[aria-label=\"Show sidebar\"],button[aria-label=\"Hide sidebar\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/titlebar-controls.tsx:172",
+      "codeHint": "sidebar; view.toggleSidebar"
+    },
+    {
+      "id": "TB-2",
+      "name": "Session tab",
+      "selector": "[data-tree-tab]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx:630",
+      "codeHint": "PaneTab; tabLabel",
+      "nameRegex": "^(New session|NEW SESSION)$"
+    },
+    {
+      "id": "TB-3",
+      "name": "New tab plus",
+      "selector": "button[aria-label=\"New session tab\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/components/pane-shell/tree/renderer/tree-group.tsx:327",
+      "codeHint": "newSessionTabAction; zones.newSessionTab"
+    },
+    {
+      "id": "TB-4",
+      "name": "Settings gear",
+      "selector": "button[aria-label=\"Open settings\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/titlebar-controls.tsx:213",
+      "codeHint": "settings; nav.settings"
+    },
+    {
+      "id": "TB-5",
+      "name": "Right pane toggle",
+      "selector": "button[aria-label=\"Show right sidebar\"],button[aria-label=\"Hide right sidebar\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/titlebar-controls.tsx:197",
+      "codeHint": "right-sidebar; view.toggleRightSidebar"
+    },
+    {
+      "id": "CH-1",
+      "name": "Empty chat title",
+      "selector": ".wordmark",
+      "sourceHint": "vendor/hermes/apps/desktop/src/components/chat/intro.tsx:161",
+      "codeHint": "Intro; Wordmark"
+    },
+    {
+      "id": "CH-2",
+      "name": "Empty chat help",
+      "selector": "p",
+      "sourceHint": "vendor/hermes/apps/desktop/src/components/chat/intro.tsx:171",
+      "codeHint": "Intro; copy.body",
+      "inside": "[data-chat-surface]"
+    },
+    {
+      "id": "CP-1",
+      "name": "Message input",
+      "selector": "[data-slot=\"composer-rich-input\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/index.tsx:1159",
+      "codeHint": "composer-root; data-placeholder"
+    },
+    {
+      "id": "CP-2",
+      "name": "Composer plus",
+      "selector": "form[data-slot=\"composer-root\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/context-menu.tsx:49",
+      "codeHint": "ComposerContextMenu; state.tools.label",
+      "nameRegex": "Attach|Add|Tools"
+    },
+    {
+      "id": "CP-3",
+      "name": "Model picker",
+      "selector": "form[data-slot=\"composer-root\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/model-pill.tsx:47",
+      "codeHint": "ModelPill",
+      "nameRegex": "^Model|Open model"
+    },
+    {
+      "id": "CP-4",
+      "name": "Reasoning level",
+      "selector": "[data-testid=\"reasoning-pill\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/reasoning-pill.tsx:74",
+      "codeHint": "ReasoningPill; reasoning-pill"
+    },
+    {
+      "id": "CP-5",
+      "name": "Microphone",
+      "selector": "form[data-slot=\"composer-root\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/voice-fan.tsx:61",
+      "codeHint": "VoiceFan; dictate",
+      "nameRegex": "^Voice$|Dictat"
+    },
+    {
+      "id": "CP-6",
+      "name": "Voice or send button",
+      "selector": "form[data-slot=\"composer-root\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/controls.tsx:147",
+      "codeHint": "StartVoiceButton; composer.send",
+      "nameRegex": "Start voice conversation|^Send$|^Stop$"
+    },
+    {
+      "id": "CP-7",
+      "name": "Voice engine arrow",
+      "selector": "button[aria-label=\"Voice chat engine\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/composer/start-voice-button.tsx:54",
+      "codeHint": "StartVoiceButton; composer.voiceEngine"
+    },
+    {
+      "id": "SB-1",
+      "name": "Command key",
+      "selector": "footer[data-slot=\"statusbar\"] > div:first-child > button:first-child",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/hooks/use-statusbar-items.tsx:475",
+      "codeHint": "command-center"
+    },
+    {
+      "id": "SB-2",
+      "name": "Status profile picker",
+      "selector": "footer [data-slot=\"profile-switcher\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/hooks/use-statusbar-items.tsx:494",
+      "codeHint": "profile-switcher; ProfileSwitcher compact"
+    },
+    {
+      "id": "SB-3",
+      "name": "Backend status",
+      "selector": "footer[data-slot=\"statusbar\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/hooks/use-statusbar-items.tsx:509",
+      "codeHint": "gateway-health; gatewayHealth.label",
+      "nameRegex": "^Backend"
+    },
+    {
+      "id": "SB-4",
+      "name": "Project folder",
+      "selector": "footer[data-slot=\"statusbar\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/hooks/use-statusbar-items.tsx:549",
+      "codeHint": "workspace-cwd",
+      "nameRegex": "project-folder|Project folder"
+    },
+    {
+      "id": "SB-5",
+      "name": "Approval mode",
+      "selector": "footer[data-slot=\"statusbar\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/shell/approval-mode-menu.tsx:48",
+      "codeHint": "approval-mode; smart",
+      "nameRegex": "^Smart$|Approval mode"
+    },
+    {
+      "id": "DR-1",
+      "name": "Sessions tab",
+      "selector": "[data-slot=\"pane-tab\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/contrib/controller.tsx:194",
+      "codeHint": "sessions; sidebar.sessions",
+      "nameRegex": "^Sessions$"
+    },
+    {
+      "id": "DR-2",
+      "name": "Bots tab",
+      "selector": "[data-slot=\"pane-tab\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/plugins/hermes-bots/plugin.tsx:443",
+      "codeHint": "LocalizedTabTitle; common.bots; pane registration",
+      "nameRegex": "^Bots$"
+    },
+    {
+      "id": "DR-3",
+      "name": "New session",
+      "selector": "button,a",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:211",
+      "codeHint": "new-session; session.new",
+      "inside": "[data-slot=\"sidebar\"]",
+      "nameRegex": "^New\\ session$"
+    },
+    {
+      "id": "DR-4",
+      "name": "Capabilities",
+      "selector": "button,a",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:218",
+      "codeHint": "capabilities; nav.capabilities",
+      "inside": "[data-slot=\"sidebar\"]",
+      "nameRegex": "^Capabilities$"
+    },
+    {
+      "id": "DR-5",
+      "name": "Messaging",
+      "selector": "button,a",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:225",
+      "codeHint": "messaging; nav.messaging",
+      "inside": "[data-slot=\"sidebar\"]",
+      "nameRegex": "^Messaging$"
+    },
+    {
+      "id": "DR-6",
+      "name": "Artifacts",
+      "selector": "button,a",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:234",
+      "codeHint": "artifacts; nav.artifacts",
+      "inside": "[data-slot=\"sidebar\"]",
+      "nameRegex": "^Artifacts$"
+    },
+    {
+      "id": "DR-7",
+      "name": "Scheduled jobs",
+      "selector": "button,a",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:242",
+      "codeHint": "cron; nav.cron",
+      "inside": "[data-slot=\"sidebar\"]",
+      "nameRegex": "^Scheduled\\ jobs$"
+    },
+    {
+      "id": "DR-8",
+      "name": "Search sessions",
+      "selector": "input[aria-label=\"Search sessions\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:1716",
+      "codeHint": "SearchField; sidebar.searchAria"
+    },
+    {
+      "id": "DR-9",
+      "name": "Pinned group",
+      "selector": "button,span,div",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:1772",
+      "codeHint": "SidebarSessionsSection; sidebar.pinned",
+      "inside": "[data-sessions-mode]",
+      "textExact": "Pinned",
+      "leafText": true
+    },
+    {
+      "id": "DR-11",
+      "name": "Sessions group",
+      "selector": "button,span,div",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/index.tsx:1945",
+      "codeHint": "SidebarSessionsSection; sessionsLabel",
+      "inside": "[data-sessions-mode]",
+      "textExact": "Sessions",
+      "leafText": true
+    },
+    {
+      "id": "DR-14",
+      "name": "Last week heading",
+      "selector": "button,span,div",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/sessions-section.tsx:393",
+      "codeHint": "groupEntriesByRecency; dateDivider",
+      "inside": "[data-sessions-mode]",
+      "textExact": "Last week",
+      "leafText": true
+    },
+    {
+      "id": "DR-22",
+      "name": "WHATSAPP group",
+      "selector": "button,span,div",
+      "sourceHint": "vendor/hermes/apps/desktop/src/lib/session-source.ts:27",
+      "codeHint": "sessionSourceLabel; whatsapp",
+      "inside": "[data-sessions-mode]",
+      "textExact": "WhatsApp",
+      "leafText": true
+    },
+    {
+      "id": "DR-23",
+      "name": "API group",
+      "selector": "button,span,div",
+      "sourceHint": "vendor/hermes/apps/desktop/src/lib/session-source.ts:5",
+      "codeHint": "sessionSourceLabel; api_server",
+      "inside": "[data-sessions-mode]",
+      "textExact": "API",
+      "leafText": true
+    },
+    {
+      "id": "DR-10",
+      "name": "Pinned session row",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 1(?:\\b|$)"
+    },
+    {
+      "id": "DR-13",
+      "name": "Recent session row",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 2(?:\\b|$)"
+    },
+    {
+      "id": "DR-15",
+      "name": "Last week session row 1",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 3(?:\\b|$)"
+    },
+    {
+      "id": "DR-16",
+      "name": "Last week session row 2",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 4(?:\\b|$)"
+    },
+    {
+      "id": "DR-17",
+      "name": "Last week session row 3",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 5(?:\\b|$)"
+    },
+    {
+      "id": "DR-18",
+      "name": "Last week session row 4",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 6(?:\\b|$)"
+    },
+    {
+      "id": "DR-19",
+      "name": "Last week session row 5",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 7(?:\\b|$)"
+    },
+    {
+      "id": "DR-20",
+      "name": "Last week session row 6",
+      "selector": "button,a,[role=\"button\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/session-row.tsx:128,710",
+      "codeHint": "SidebarSessionRow; SidebarSessionRowImpl",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "^Session title 8(?:\\b|$)"
+    },
+    {
+      "id": "DR-12",
+      "name": "Drawer filter button",
+      "selector": "button[aria-label=\"Filters\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:238",
+      "codeHint": "SidebarFilterMenu; sidebar.filter.filters"
+    },
+    {
+      "id": "DR-21",
+      "name": "More sessions",
+      "selector": "button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/load-more-row.tsx:17",
+      "codeHint": "SidebarLoadMoreRow",
+      "inside": "[data-sessions-mode]",
+      "nameRegex": "Load more|Load \\d+ more"
+    },
+    {
+      "id": "DR-24",
+      "name": "Dimmed chat backdrop",
+      "selector": "[data-narrow-overlay-backdrop]",
+      "sourceHint": "src/desktop/mobile.ts:108",
+      "codeHint": "installOverlayDismiss"
+    },
+    {
+      "id": "PR-1",
+      "name": "Home or all profiles",
+      "selector": "[data-slot=\"profile-rail\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:538",
+      "codeHint": "ProfilePill; glyph home/layers",
+      "nameRegex": "Show all profiles|Switch to Profile A"
+    },
+    {
+      "id": "PR-2",
+      "name": "Profile A chip",
+      "selector": "[data-slot=\"profile-rail\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:485",
+      "codeHint": "ProfileSquare; named.map",
+      "nameRegex": "^Profile A$"
+    },
+    {
+      "id": "PR-3",
+      "name": "Profile B chip",
+      "selector": "[data-slot=\"profile-rail\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:485",
+      "codeHint": "ProfileSquare; named.map",
+      "nameRegex": "^Profile B$"
+    },
+    {
+      "id": "PR-4",
+      "name": "Profile C chip",
+      "selector": "[data-slot=\"profile-rail\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:485",
+      "codeHint": "ProfileSquare; named.map",
+      "nameRegex": "^Profile C$"
+    },
+    {
+      "id": "PR-5",
+      "name": "Profile D chip",
+      "selector": "[data-slot=\"profile-rail\"] button",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:485",
+      "codeHint": "ProfileSquare; named.map",
+      "nameRegex": "^Profile D$"
+    },
+    {
+      "id": "PR-6",
+      "name": "New profile plus",
+      "selector": "[data-slot=\"profile-rail\"] button[aria-label=\"New profile\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:651",
+      "codeHint": "AddProfileButton"
+    },
+    {
+      "id": "PR-7",
+      "name": "Import cloud button",
+      "selector": "[data-slot=\"profile-rail\"] button[aria-label=\"Import profile\u2026\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:652",
+      "codeHint": "ImportProfileButton; cloud-download"
+    },
+    {
+      "id": "PR-8",
+      "name": "Manage profiles dots",
+      "selector": "[data-slot=\"profile-rail\"] button[aria-label=\"Manage profiles\u2026\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:660",
+      "codeHint": "ProfilePill; ellipsis"
+    },
+    {
+      "id": "PR-9",
+      "name": "Connect gateway plug",
+      "selector": "[data-slot=\"profile-rail\"] button[aria-label=\"Manage gateways\u2026\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-switcher.tsx:667",
+      "codeHint": "ProfilePill; plug"
+    },
+    {
+      "id": "PP-1",
+      "name": "Profile A list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile A$"
+    },
+    {
+      "id": "PP-2",
+      "name": "Profile B list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile B$"
+    },
+    {
+      "id": "PP-3",
+      "name": "Profile C list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile C$"
+    },
+    {
+      "id": "PP-4",
+      "name": "Profile D list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile D$"
+    },
+    {
+      "id": "PP-5",
+      "name": "Profile E list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile E$"
+    },
+    {
+      "id": "PP-6",
+      "name": "Profile F list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile F$"
+    },
+    {
+      "id": "PP-7",
+      "name": "Profile G list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile G$"
+    },
+    {
+      "id": "PP-8",
+      "name": "Profile H list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile H$"
+    },
+    {
+      "id": "PP-9",
+      "name": "Profile I list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile I$"
+    },
+    {
+      "id": "PP-10",
+      "name": "Profile J list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile J$"
+    },
+    {
+      "id": "PP-11",
+      "name": "Profile K list item",
+      "selector": "[role=\"menuitemradio\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:206",
+      "codeHint": "ProfileItem; DropdownMenuRadioGroup",
+      "nameRegex": "^Profile K$"
+    },
+    {
+      "id": "PP-12",
+      "name": "All profiles",
+      "selector": "[role^=\"menuitem\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:218",
+      "codeHint": "ALL_PROFILES",
+      "nameRegex": "^All\\ profiles$"
+    },
+    {
+      "id": "PP-13",
+      "name": "New profile",
+      "selector": "[role^=\"menuitem\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:236",
+      "codeHint": "setCreateOpen(true)",
+      "nameRegex": "^New\\ profile$"
+    },
+    {
+      "id": "PP-14",
+      "name": "Import profile...",
+      "selector": "[role^=\"menuitem\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:240",
+      "codeHint": "runImportProfileFlow",
+      "nameRegex": "^Import\\ profile\u2026$"
+    },
+    {
+      "id": "PP-15",
+      "name": "Manage profiles...",
+      "selector": "[role^=\"menuitem\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/profile-dropdown-switcher.tsx:244",
+      "codeHint": "navigate(PROFILES_ROUTE)",
+      "nameRegex": "^Manage\\ profiles\u2026$"
+    },
+    {
+      "id": "FM-1",
+      "name": "Grouping / Updated",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:258",
+      "codeHint": "setSidebarGrouping",
+      "nameRegex": "^Grouping(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-2",
+      "name": "Ordering",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:278",
+      "codeHint": "setSidebarOrdering",
+      "nameRegex": "^Ordering(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-3",
+      "name": "Show",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:293",
+      "codeHint": "toggleSidebarRowMeta",
+      "nameRegex": "^Show(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-4",
+      "name": "Inbox style",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:317-320",
+      "codeHint": "card-rows; setSidebarCardRows",
+      "nameRegex": "^Inbox\\ style(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-5",
+      "name": "Profile rail",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:328",
+      "codeHint": "profile-rail; toggleProfileRailVisible",
+      "nameRegex": "^Profile\\ rail(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-6",
+      "name": "Filters",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:338",
+      "codeHint": "DropdownMenuLabel; f.filters",
+      "nameRegex": "^Filters(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-7",
+      "name": "Status",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:341",
+      "codeHint": "toggleSidebarStatusFilter",
+      "nameRegex": "^Status(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-8",
+      "name": "Pull request",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:358",
+      "codeHint": "toggleSidebarPrFilter",
+      "nameRegex": "^Pull\\ request(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-9",
+      "name": "Profile",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:373",
+      "codeHint": "toggleSidebarProfileFilter",
+      "nameRegex": "^Profile(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-10",
+      "name": "Project",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:400",
+      "codeHint": "toggleSidebarProjectFilter",
+      "nameRegex": "^Project(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-11",
+      "name": "All profiles",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:424-428",
+      "codeHint": "all-profiles; toggleShowAllProfiles",
+      "nameRegex": "^All\\ profiles(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    },
+    {
+      "id": "FM-12",
+      "name": "Archived",
+      "selector": "[role^=\"menuitem\"],[data-slot=\"dropdown-menu-label\"]",
+      "sourceHint": "vendor/hermes/apps/desktop/src/app/chat/sidebar/filter-menu.tsx:433",
+      "codeHint": "archived; setSidebarShowArchived",
+      "nameRegex": "^Archived(?:$| Updated)",
+      "states": [
+        "F5"
+      ]
+    }
+  ],
+  "reserved": {
+    "OS-1": {
+      "name": "Phone status area",
+      "code": "Android system status bar",
+      "source": "C:/example/tmp/android-statusbar-screenshot.png (image evidence)"
+    },
+    "OS-2": {
+      "name": "Phone gesture area",
+      "code": "Android system navigation bar",
+      "source": "C:/example/tmp/android-statusbar-screenshot.png (image evidence)"
+    },
+    "KI-1": {
+      "name": "Clipped Smart",
+      "code": "approval-mode; Smart",
+      "source": "vendor/hermes/apps/desktop/src/app/shell/approval-mode-menu.tsx:48"
+    },
+    "KI-2": {
+      "name": "Squeezed profile name",
+      "code": "profile-switcher",
+      "source": "src/desktop/statusbar-defaults.ts:26"
+    },
+    "KI-3": {
+      "name": "Hidden controls by screen shape",
+      "code": "Short-landscape top controls; wideUntouched",
+      "source": "docs/evidence/android-four-fixes-emulator-20261021.md:98"
+    },
+    "KI-4": {
+      "name": "Crowded tab plus",
+      "code": "New-session + horizontally clipped",
+      "source": "docs/evidence/android-four-fixes-emulator-20261021.md:33"
+    }
+  },
+  "notes": [
+    "OS items are native Android chrome, not in this web renderer. Do not invent DOM boxes for them.",
+    "KI-1 to KI-4 are derived issue findings, not controls.",
+    "Unmapped raw DOM elements receive stable NEW-<selector hash> IDs and stay visible in JSON and reports.",
+    "A missing mapping is not an instruction to add a UI element."
+  ]
+}

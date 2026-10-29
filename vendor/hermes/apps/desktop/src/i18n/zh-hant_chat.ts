@@ -2,6 +2,9 @@ import type { TranslationOverrides } from './define-locale'
 
 export const zhHantChat = {
   composer: {
+    voiceEngineCodexLive: 'Codex Live（全雙工，委託給 Hermes）',
+    voiceEngineCodexLiveDescription: '使用現有 ChatGPT 登入。私有介面；可用性和計費均無保證。',
+    voiceEngineCodexLiveShort: 'Codex Live',
     message: '訊息',
     wakingProfile: profile => `正在喚醒 ${profile}…`,
     placeholderStarting: '正在啟動 Hermes...',
@@ -302,7 +305,7 @@ export const zhHantChat = {
       heartbeatEveryHours: hours => `每 ${hours} 小時`,
       heartbeatEverySeconds: seconds => `每 ${seconds} 秒`,
       heartbeatNext: time => `下次 ${time}`,
-      heartbeatDueWaitingForIdle: '已到期 — 等待會話閒置',
+      dueWaitingForIdle: '已到期 — 等待會話閒置',
       heartbeatActions: '活動訊號操作',
       pauseHeartbeat: '暫停活動訊號',
       resumeHeartbeat: '繼續活動訊號',

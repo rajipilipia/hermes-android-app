@@ -4,6 +4,7 @@
 //   DESKTOP_TEST_ORIGIN=http://127.0.0.1:18767 node tests/browser/mobile-layout.mjs [outDir]
 import { chromium } from "@playwright/test";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { pathToFileURL } from "node:url";
 const origin = process.env.DESKTOP_TEST_ORIGIN ?? "http://127.0.0.1:18767";
 const out = process.argv[2] ?? ".cache/mobile-layout/run";
 mkdirSync(out, { recursive: true });
@@ -47,6 +48,8 @@ const sessions = Array.from({ length: 12 }, (_, i) => ({
 /** Hermes's own REST (what the native HermesApi bridge returns), synthetic fixtures. */
 const layoutProfiles = (multi) => [{ name: "default", is_active: true, is_default: true },
   ...(multi ? Array.from({ length: Number(process.env.LAYOUT_PROFILE_COUNT ?? 10) - 1 }, (_, i) => ({ name: `layout-profile-${i + 1}-long-name`, is_active: false, is_default: false })) : [])];
+export function setLayoutMessages(messages) { MESSAGES.splice(0, MESSAGES.length, ...messages); }
+
 export function restReply(params, calls = [], multiProfile = false) {
   const op = params.operation;
   calls.push(op);
@@ -133,13 +136,18 @@ export async function openPage(browser, vp, { dark = false, detailed = false } =
 
 // Also used against the installed APK's WebView on the isolated emulator. Only
 // synthetic layout data: no provider request, sign-in, real chat or paid call.
-export async function configureLayoutFixture(page, { detailed = true, multiProfile = false } = {}) {
+export async function configureLayoutFixture(page, { detailed = true, multiProfile = false, restOverride } = {}) {
   const errors = [];
   const calls = [];
   page.on("pageerror", (e) => errors.push(e.message));
   if (process.env.DEBUG) page.on("console", (m) => m.type() === "error" && console.log("console.error:", m.text().slice(0, 300)));
   // Native HermesApi bridge: Hermes's own REST, answered from the fixtures above.
-  await page.exposeFunction("__hermesRestFixture", (request) => restReply(JSON.parse(request), calls, multiProfile));
+  await page.exposeFunction("__hermesRestFixture", (request) => {
+    const parsed = JSON.parse(request);
+    const reply = restOverride?.(parsed);
+    if (reply !== undefined) { calls.push(parsed.operation); return reply; }
+    return restReply(parsed, calls, multiProfile);
+  });
   await page.addInitScript(() => {
     window.HermesApi = {
       call(id, request) {
@@ -165,6 +173,10 @@ export async function configureLayoutFixture(page, { detailed = true, multiProfi
             window.__hermesGuestEvent?.(payload.guest, "dom-ready", detail({}));
             window.__hermesGuestEvent?.(payload.guest, "page-title-updated", detail({}));
             window.__hermesGuestEvent?.(payload.guest, "did-stop-loading", detail({}));
+          }
+          if (payload.op === "html") {
+            const detail = JSON.stringify({ pageUrl: "https://hermes-offline-preview.invalid/", pageTitle: "Synthetic HTML" });
+            window.__hermesGuestEvent?.(payload.guest, "did-stop-loading", detail);
           }
         }, 10);
       },
@@ -418,8 +430,8 @@ export async function scenario(browser, vp, opts = {}) {
   return r;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? "/opt/pw-browsers/chromium-1194/chrome-linux/chrome" });
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM ?? (process.platform === "win32" ? undefined : "/opt/pw-browsers/chromium-1194/chrome-linux/chrome") });
   const report = [];
   try {
     for (const vp of VIEWPORTS.filter((v) => !only || only.some((o) => v.name.includes(o)))) {

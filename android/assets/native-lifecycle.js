@@ -6,6 +6,9 @@
   // foreground authority, including the cold visible-document case.
   var nativePaused = true;
   var paused = true;
+  // True only while native confirmed a user-started Codex Live call (microphone foreground
+  // service running). Then, and only then, the call's tracks and audio survive a pause.
+  var call = false;
   var generation = 0;
   var tracks = new Set();
   var devices = window.navigator.mediaDevices;
@@ -27,18 +30,25 @@
       });
     };
   }
+  function stopCapture() {
+    generation++;
+    tracks.forEach(function (track) { track.stop(); });
+    tracks.clear();
+    window.document.querySelectorAll('audio,video').forEach(function (media) { media.pause(); });
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+  }
   function update() {
     paused = nativePaused || window.document.visibilityState === 'hidden';
-    if (paused) {
-      generation++;
-      tracks.forEach(function (track) { track.stop(); });
-      tracks.clear();
-      window.document.querySelectorAll('audio,video').forEach(function (media) { media.pause(); });
-      if (window.speechSynthesis) window.speechSynthesis.cancel();
-    }
+    if (paused && !call) stopCapture();
     window.dispatchEvent(new window.CustomEvent('hermes:native-lifecycle', { detail: { state: paused ? 'pause' : 'resume' } }));
   }
   function lifecycle(state) {
+    if (state === 'call-on' || state === 'call-off') {
+      call = state === 'call-on';
+      // The call ended while Hermes is in the background: the normal pause rules apply at once.
+      if (!call && paused) stopCapture();
+      return;
+    }
     if (state !== 'pause' && state !== 'resume') return;
     nativePaused = state === 'pause';
     update();

@@ -10,7 +10,7 @@ import json
 import re
 from typing import Any
 
-SOURCE_COMMIT = '93ac19694ea0c4cc1e1661ff37c2a171d96a1bc0'
+SOURCE_COMMIT = '925ede7741ffbbde27b50ce6b1903465302e2576'
 MAX_REQUEST_BYTES = 4 * 1024 * 1024
 MAX_JSON_BYTES = 4 * 1024 * 1024
 
@@ -31,6 +31,9 @@ def integer(minimum=0, maximum=500):
 
 BOOL = {'type': 'boolean'}
 NAME = {'type': 'string', 'pattern': r'^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$', 'maxLength': 128}
+# DELETE /api/sessions/empty is a different upstream route (delete every empty session); it must never be read as one
+# session id. Stored session ids are never the word "empty".
+DELETE_SESSION_ID = {**NAME, 'pattern': r'^(?!empty$)[A-Za-z0-9][A-Za-z0-9_-]{0,127}$'}
 # Kept here to avoid a catalog/identifier import cycle. This is authority, not
 # upstream's convenience normalization; request names are never repaired.
 PROFILE = {'type': 'string', 'pattern': r'^(?!(?:all|current|hermes|test|tmp|root|sudo)$)[a-z0-9][a-z0-9_-]{0,63}$', 'maxLength': 64}
@@ -74,7 +77,8 @@ class Operation:
                 'availability': 'withheld' if self.id in WITHHELD_OPERATIONS else 'implemented',
                 'limitations': (['Explicit 403: safe authoritative scoped implementation pending'] if self.id in WITHHELD_OPERATIONS else [])
                     + (['session_id-bound file reads are explicitly withheld'] if self.path in ('/api/fs/read-data-url', '/api/fs/download') else []),
-                'pathParams': obj({n: NAME for n in path_params}, path_params),
+                'pathParams': obj({n: (DELETE_SESSION_ID if self.method == 'DELETE' and n == 'session_id' else NAME)
+                                   for n in path_params}, path_params),
                 'query': self.query, 'body': self.body}
 
 
@@ -101,12 +105,16 @@ _add('GET', '/api/status', 'status', projection='startup')
 # obtained for a read. Reads use the raw saved config and project these leaves.
 SETTINGS = obj({
     'display': obj({'skin': string(128), 'theme': string(128), 'language': string(32),
-                    'show_reasoning': BOOL, 'show_cost': BOOL, 'compact': BOOL}),
+                    'show_reasoning': BOOL, 'show_cost': BOOL, 'compact': BOOL, 'resume_last_session': BOOL}),
     'agent': obj({'max_turns': integer(1, 1000)}),
     'compression': obj({'enabled': BOOL}),
     'voice': obj({'enabled': BOOL}),
     'stt': obj({'enabled': BOOL, 'provider': string(64)}),
     'tts': obj({'provider': string(64), 'voice': string(256)}),
+    # Desktop 0.22.5 Settings switches. Appearance and housekeeping only: no keys, URLs, providers or backends.
+    'desktop': obj({'font_family': string(512)}),
+    'terminal': obj({'font_family': string(512)}),
+    'sessions': obj({'auto_archive': BOOL, 'auto_archive_days': integer(1, 3650)}),
 })
 _add('GET', '/api/config', 'config_env', query={'include_defaults': BOOL}, projection='settings')
 _add('GET', '/api/config/defaults', 'config_env', profile_query=False, projection='startup')
@@ -115,7 +123,13 @@ _add('GET', '/api/env', 'config_env', projection='startup')
 _add('GET', '/api/fs/default-cwd', 'files', projection='startup')
 _add('GET', '/api/model/options', 'models',
      query={'explicit_only': BOOL, 'include_unconfigured': BOOL, 'refresh': BOOL}, projection='startup')
-_add('PUT', '/api/config', 'config_env', body=obj({'config': SETTINGS}, ('config',)), permission='settings.write')
+_add('PUT', '/api/config', 'config_env', query={'preserve_language': BOOL}, body=obj({'config': SETTINGS}, ('config',)), permission='settings.write')
+# Settings > Models (Desktop api/models.ts setModelAssignment): provider and model names only. base_url and
+# api_key are not listed, so a custom endpoint or key can never travel through this call.
+_add('POST', '/api/model/set', 'models',
+     body=obj({'scope': string(16, enum=['main', 'auxiliary']), 'provider': string(128), 'model': string(256),
+               'task': string(64), 'confirm_expensive_model': BOOL}, ('scope', 'provider', 'model')),
+     permission='settings.write')
 
 # File paths are resolved against the server-owned workspace grant BEFORE the
 # original endpoint validates/handles them; no host-wide default directory API.
@@ -133,7 +147,17 @@ _add('POST', '/api/files/mkdir', 'files', body=obj({'path': PATH}, ('path',)),
 _add('POST', '/api/files/upload', 'files',
      body=obj({'path': PATH, 'data_url': string(3 * 1024 * 1024), 'overwrite': BOOL}, ('path', 'data_url')),
      permission='files.write', paths=('body.path',), profile_query=False)
+# Desktop 0.22.5 sends composer images this way when the PC owns the composer queue. The PC
+# checks image bytes (magic number, 25 MiB cap), sanitizes the file name and picks the target
+# in its own image cache; the caller never names a path. Same size limit as files/upload.
+_add('POST', '/api/chat/image-upload', 'files',
+     body=obj({'data_url': string(3 * 1024 * 1024), 'filename': string(255)}, ('data_url',)),
+     permission='files.write')
 
+# Desktop 0.22.5 sends a session mutation identity with every edit (fenced by the PC's
+# mutation-snapshot read). Plain integers/ids; the PC owner still decides the write.
+MUTATION_IDENTITY = {'request_id': NAME, 'expected_revision': integer(0, 2147483647),
+                     'expected_generation': integer(0, 2147483647)}
 PAGE = {'limit': integer(1, 100), 'offset': integer(0, 1000000), 'min_messages': integer(),
         'archived': string(16, enum=['exclude', 'only', 'include']), 'order': string(16, enum=['created', 'recent'])}
 SOURCES = {'source': string(64), 'sources': string(256), 'exclude_sources': string(256)}
@@ -150,8 +174,13 @@ _add('GET', '/api/sessions/{session_id}/timeline', 'sessions',
 _add('GET', '/api/sessions/{session_id}/messages/around', 'sessions',
      query={'limit': integer(1, 120), 'row_id': integer(1, 2147483647)}, query_required=('row_id',))
 _add('PATCH', '/api/sessions/{session_id}', 'sessions',
-     body=obj({'title': string(512), **{k: BOOL for k in ('archived', 'hidden', 'pinned', 'unread')}}),
+     body=obj({'title': string(512), **{k: BOOL for k in ('archived', 'hidden', 'pinned', 'unread')},
+               **MUTATION_IDENTITY, 'profile': PROFILE}),
      permission='sessions.write', profile_query=False)
+_add('GET', '/api/sessions/{session_id}/mutation-snapshot', 'sessions')
+# Delete chat (Desktop api/sessions.ts mutateSessionHttp). Same identity fence as PATCH, sent as query values.
+# profile_query: the native layer sets the owner profile itself, like every other profile-aware route.
+_add('DELETE', '/api/sessions/{session_id}', 'sessions', query=MUTATION_IDENTITY, permission='sessions.write')
 _add('GET', '/api/profiles/sessions', 'profiles',
      query={**PAGE, 'limit': integer(1, 500), **SOURCES, 'profile': SELECTOR}, profile_query=False)
 _add('GET', '/api/profiles/sessions/sidebar', 'profiles', profile_query=False,
@@ -169,13 +198,35 @@ for kind in ('stt', 'tts'):
          body=obj({'lease': NAME, 'active': BOOL}, ('lease', 'active')), permission='audio')
 _add('GET', '/api/audio/elevenlabs/voices', 'audio', permission='audio')
 _add('GET', '/api/audio/voice-live/status', 'audio', permission='audio')
+# Live voice (GPT Live and Codex Live). The PC exchanges the phone's WebRTC SDP offer for the
+# provider answer; the provider key and Codex credentials stay on the PC. `history` is
+# toLiveHistory() output: up to 24 text turns, each {type, role, content:[{type, text}]}.
+LIVE_HISTORY_TURN = obj({
+    'type': string(16, enum=['message']),
+    'role': string(16, enum=['assistant', 'developer', 'user']),
+    'content': {'type': 'array', 'maxItems': 8, 'items': obj({
+        'type': string(16, enum=['input_text', 'output_text']), 'text': string(4000)}, ('type', 'text'))},
+}, ('type', 'role', 'content'))
+# Metadata-only diagnostics (upstream tools/voice_live_debug.py FIELDS). No payloads or text.
+LIVE_DEBUG_EVENT = obj({
+    'event': string(64), 'connection_id': string(64), 'handoff_id': string(64),
+    'duration_ms': integer(0, 86400000), 'state': string(32), 'error': string(32),
+    'outcome': string(32), 'close_trigger': string(32),
+    'conversation_changed': BOOL, 'profile_changed': BOOL, 'connection_changed': BOOL,
+}, ('event',))
+_add('POST', '/api/audio/voice-live/session', 'audio',
+     body=obj({'sdp': string(65536), 'history': {'type': 'array', 'maxItems': 48, 'items': LIVE_HISTORY_TURN}},
+              ('sdp',)), permission='audio')
+_add('POST', '/api/audio/voice-live/debug', 'audio',
+     body=obj({'events': {'type': 'array', 'maxItems': 20, 'items': LIVE_DEBUG_EVENT}}, ('events',)),
+     permission='audio')
 
 _add('GET', '/api/skills', 'skills')
 _add('GET', '/api/skills/content', 'skills', query={'name': string(256)})
 _add('PUT', '/api/skills/toggle', 'skills', body=obj({'name': string(256), 'enabled': BOOL}, ('name', 'enabled')), permission='skills.write')
 for suffix in ('official', 'sources'):
     _add('GET', '/api/skills/hub/' + suffix, 'skills', permission='network')
-_add('GET', '/api/skills/hub/search', 'skills', query={'q': string(512), 'source': string(256)}, permission='network')
+_add('GET', '/api/skills/hub/search', 'skills', query={'q': string(512), 'source': string(256), 'limit': integer(1, 50)}, permission='network')
 for suffix in ('preview', 'scan'):
     _add('GET', '/api/skills/hub/' + suffix, 'skills', query={'identifier': string(512)}, permission='network')
 # Installing arbitrary executable plugins/MCPs is left to existing typed WS
@@ -199,6 +250,14 @@ _add('GET', '/api/cron/jobs', 'cron')
 _add('GET', '/api/cron/jobs/{job_id}', 'cron')
 _add('GET', '/api/cron/jobs/{job_id}/runs', 'cron', query={'limit': integer(1, 100)})
 _add('GET', '/api/cron/blueprints', 'cron')
+# Pause, resume and delete a stored job (Desktop api/cron.ts). Create, edit and run-now stay out: they can
+# schedule or start arbitrary agent work.
+for action in ('pause', 'resume'):
+    _add('POST', '/api/cron/jobs/{job_id}/' + action, 'cron', permission='settings.write')
+_add('DELETE', '/api/cron/jobs/{job_id}', 'cron', permission='settings.write')
+# Read-only view of delegation routing (generic redaction drops api_key previews). The three
+# PUT routes are not added: they write backend choice and model routes with api_key/base_url.
+_add('GET', '/api/delegation/routing', 'delegation')
 _add('GET', '/api/model/info', 'models', projection='redact')
 _add('GET', '/api/model/auxiliary', 'models', projection='redact')
 _add('GET', '/api/model/moa', 'models', projection='redact')

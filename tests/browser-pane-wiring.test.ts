@@ -10,11 +10,15 @@ it("in-app browser guests get no bridge, no file/content access, platform TLS an
   expect(pane).not.toContain("setDownloadListener");
   for (const rule of [
     "setAllowFileAccess(false)", "setAllowContentAccess(false)", "MIXED_CONTENT_NEVER_ALLOW",
-    "setSupportMultipleWindows(false)", "setGeolocationEnabled(false)", "setAcceptThirdPartyCookies(view,false)",
+    "setSupportMultipleWindows(true)", "setGeolocationEnabled(false)", "setAcceptThirdPartyCookies(view,false)",
     "handler.cancel();", "request.deny();", "callback.invoke(origin,false,false);", "callback.onReceiveValue(null);return true;",
-    "NativeHostPolicy.allowGuest(url)", "if(sameServer(url))",
+    "NativeHostPolicy.allowGuest(url)", "if(document!=null||sameServer(url))",
+    "setBlockNetworkLoads(true)", "setDomStorageEnabled(false)", "sandbox allow-scripts; ",
   ]) expect(pane).toContain(rule);
   expect(pane).not.toMatch(/handler\.proceed|\.grant\(/);
+  expect(pane).toMatch(/onCreateWindow[\s\S]*return false;/);
+  expect(pane).toContain("NativeHostPolicy.requiresExternalAuthentication(url)");
+  expect(pane).toContain("version==loadVersion");
 });
 
 it("the activity routes guest requests, destroys guests with the document and gives Back to the visible page first", () => {

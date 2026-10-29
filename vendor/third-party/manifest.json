@@ -1,7 +1,28 @@
 {
   "policy": "Installed production dependency notice inventory (inclusive; build may tree-shake modules). No package executable code is vendored here. Preserve source/notice links for compiled redistribution. Unmodified noVNC is MPL-2.0, not MIT.",
-  "lockSha256": "d5717b2042b33ebe8e9ebb2425a2745d57a3eb717d810658d19cc9d39851d10b",
+  "lockSha256": "1d4d5ea7447fda08e2077fbf133014525b8129eeab25c3dee3a937968eaf2406",
   "packages": [
+    {
+      "name": "@napi-rs/canvas",
+      "version": "1.0.13",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/@napi-rs/canvas/-/canvas-1.0.13.tgz",
+      "notices": [{ "path": "vendor/third-party/_napi-rs_canvas-1.0.13/LICENSE", "sha256": "0b8e3b4f0042f33677406344854c1dcce3a2878eb3a3f6baee58c6f5752655ce" }]
+    },
+    {
+      "name": "@napi-rs/canvas-win32-x64-msvc",
+      "version": "1.0.13",
+      "license": "MIT",
+      "source": "https://registry.npmjs.org/@napi-rs/canvas-win32-x64-msvc/-/canvas-win32-x64-msvc-1.0.13.tgz",
+      "notices": [{ "path": "vendor/third-party/_napi-rs_canvas-win32-x64-msvc-1.0.13/LICENSE", "sha256": "0b8e3b4f0042f33677406344854c1dcce3a2878eb3a3f6baee58c6f5752655ce" }]
+    },
+    {
+      "name": "pdfjs-dist",
+      "version": "6.4.299",
+      "license": "Apache-2.0",
+      "source": "https://registry.npmjs.org/pdfjs-dist/-/pdfjs-dist-6.4.299.tgz",
+      "notices": [{ "path": "vendor/third-party/pdfjs-dist-6.4.299/LICENSE", "sha256": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594" }]
+    },
     {
       "name": "@antfu/install-pkg",
       "version": "2.1.0",

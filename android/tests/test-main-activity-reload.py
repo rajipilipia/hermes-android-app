@@ -31,6 +31,7 @@ public class Activity extends android.content.Context {
  public void drain(){Runnable r;while((r=ui.poll())!=null)r.run();}
  public void awaitQueued(int count)throws Exception{long end=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(5);while(ui.size()<count){if(System.nanoTime()>end)throw new AssertionError("UI callback not queued");Thread.sleep(1);}}
  public android.content.res.AssetManager getAssets(){return new android.content.res.AssetManager();}
+ public java.io.File getExternalFilesDir(String type){return null;}
  public android.content.res.Resources getResources(){return new android.content.res.Resources();}
  public android.view.Window getWindow(){return new android.view.Window();}
  public android.window.OnBackInvokedDispatcher getOnBackInvokedDispatcher(){return new android.window.OnBackInvokedDispatcher();}
@@ -49,6 +50,7 @@ public class Activity extends android.content.Context {
 'android/net/Uri.java':'package android.net; public class Uri { private String value; private Uri(String s){value=s;} public static Uri parse(String s){return new Uri(s);} public String toString(){return value;} }',
 'android/net/http/SslError.java':'package android.net.http; public class SslError {}',
 'android/os/Bundle.java':'package android.os; public class Bundle {}',
+'android/os/Process.java':'package android.os; public class Process { public static int myPid(){return 1;} }',
 'android/os/Build.java':'package android.os; public class Build { public static class VERSION {public static final int SDK_INT=36;} }',
 'android/graphics/Bitmap.java':'package android.graphics; public class Bitmap {}',
 'android/graphics/Color.java':'package android.graphics; public class Color { public static int rgb(int a,int b,int c){return 0;} }',
@@ -91,6 +93,9 @@ public class Activity extends android.content.Context {
  public void setWebViewClient(WebViewClient c){client=c;} public void setWebChromeClient(Object c){}
  public void evaluateJavascript(String script,ValueCallback<String> callback){scripts.add(script);}
  public void onPause(){} public void onResume(){} public void stopLoading(){} public void clearCache(boolean v){} public void destroy(){}
+ public static final int RENDERER_PRIORITY_IMPORTANT=2; public int priority=2; public boolean waived=true;
+ public void setRendererPriorityPolicy(int p,boolean w){priority=p;waived=w;} public int getRendererRequestedPriority(){return priority;}
+ public boolean getRendererPriorityWaivedWhenNotVisible(){return waived;}
 }''',
 'android/webkit/WebResourceRequest.java':'package android.webkit; public interface WebResourceRequest { android.net.Uri getUrl(); String getMethod(); boolean isForMainFrame(); }',
 'android/webkit/WebResourceResponse.java':'package android.webkit; public class WebResourceResponse { public WebResourceResponse(String m,String e,int s,String r,java.util.Map<String,String> h,java.io.InputStream i){} }',
@@ -149,6 +154,8 @@ public class Activity extends android.content.Context {
 }''',
 'us/pilipia/hermes/prototype/ServerDialogs.java':'''package us.pilipia.hermes.prototype; class ServerDialogs { static void confirm(android.app.Activity a,String t,String m,String act,Runnable ok,Runnable cancel){cancel.run();} }''',
 'us/pilipia/hermes/prototype/ConnectionWorkService.java':'package us.pilipia.hermes.prototype; public class ConnectionWorkService {}',
+'us/pilipia/hermes/prototype/VoiceCallService.java':'package us.pilipia.hermes.prototype; public class VoiceCallService { static void setOnEnd(Runnable action){} }',
+'us/pilipia/hermes/prototype/FileLog.java':'package us.pilipia.hermes.prototype; public final class FileLog { public static void start(java.io.File dir,int pid){} }',
 }
 
 
@@ -171,7 +178,7 @@ def main():
         target = OUT / 'fakes' / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(content.strip() + '\n', encoding='utf-8')
-    sources = [SRC / name for name in ['MainActivity.java', 'NativeHostPolicy.java', 'NativeAuth.java', 'NativeWork.java', 'ServerOrigin.java', 'BoundedStreams.java', 'BundledDocument.java']]
+    sources = [SRC / name for name in ['MainActivity.java', 'NativeHostPolicy.java', 'NativeAuth.java', 'NativeWork.java', 'NativeVoiceCall.java', 'ServerOrigin.java', 'BoundedStreams.java', 'BundledDocument.java']]
     sources += [ROOT / 'android/tests/MainActivityReloadHostTest.java']
     run([JDK / 'javac.exe', '--release', '8', '-Xlint:-options', '-d', classes,
          *sorted((OUT / 'fakes').rglob('*.java')), *sources], 'compile')

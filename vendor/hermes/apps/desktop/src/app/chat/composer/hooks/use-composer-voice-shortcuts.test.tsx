@@ -2,6 +2,8 @@ import { act, cleanup, render } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
+import { $voiceLiveStatus } from '@/store/voice-live'
+
 import { markActiveComposer, requestComposerDictation, requestVoiceToggle } from '../focus'
 import { ComposerScopeProvider, ComposerSurfaceProvider, MAIN_COMPOSER_SCOPE } from '../scope'
 
@@ -9,6 +11,9 @@ import { useComposerVoice } from './use-composer-voice'
 
 const mocks = vi.hoisted(() => ({
   conversationEnabled: [] as boolean[],
+  liveEnabled: [] as boolean[],
+  liveSubmit: null as null | ((text: string, context: string) => Promise<void>),
+  submit: vi.fn(async () => true),
   dictate: vi.fn(),
   endConversation: vi.fn(async () => undefined)
 }))
@@ -30,7 +35,18 @@ vi.mock('./use-voice-conversation', () => ({
 }))
 
 vi.mock('./use-voice-live-conversation', () => ({
-  useVoiceLiveConversation: () => ({ end: mocks.endConversation, start: vi.fn(), status: 'idle' })
+  useVoiceLiveConversation: ({
+    enabled,
+    onSubmit
+  }: {
+    enabled: boolean
+    onSubmit: (text: string, context: string) => Promise<void>
+  }) => {
+    mocks.liveEnabled.push(enabled)
+    mocks.liveSubmit = onSubmit
+
+    return { end: mocks.endConversation, start: vi.fn(), status: 'idle' }
+  }
 }))
 
 vi.mock('./use-auto-speak-replies', () => ({ useAutoSpeakReplies: vi.fn() }))
@@ -57,7 +73,10 @@ vi.mock('@/lib/tts-lease', () => ({
   syncTtsLease: vi.fn(async () => undefined)
 }))
 vi.mock('@/lib/wake-indicator', () => ({ clearWakeIndicator: vi.fn(), syncWakeIndicatorWithVoice: vi.fn() }))
-vi.mock('@/lib/voice-live', () => ({ toLiveHistory: vi.fn(() => []) }))
+vi.mock('@/lib/voice-live', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  toLiveHistory: vi.fn(() => [])
+}))
 vi.mock('@/store/notifications', () => ({ notify: vi.fn(), notifyError: vi.fn() }))
 vi.mock('@/store/voice-live', async () => {
   const { atom } = await import('nanostores')
@@ -65,7 +84,7 @@ vi.mock('@/store/voice-live', async () => {
   return {
     $voiceLiveStatus: atom(null),
     refreshVoiceLiveStatus: vi.fn(async () => undefined),
-    selectedVoiceChatMode: vi.fn(() => 'chained')
+    selectedVoiceChatMode: vi.fn((status: { mode: string } | null) => status?.mode ?? 'chained')
   }
 })
 vi.mock('@/store/voice-prefs', async () => {
@@ -95,7 +114,7 @@ function Composer({ disabled, target }: { disabled: boolean; target: string }) {
     focusInput: vi.fn(),
     insertText: vi.fn(),
     maxRecordingSeconds: 60,
-    onSubmit: vi.fn(async () => true),
+    onSubmit: mocks.submit,
     onTranscribeAudio: vi.fn(async () => 'spoken text'),
     sessionId: null,
     target
@@ -128,10 +147,27 @@ afterEach(() => {
   mocks.dictate.mockClear()
   mocks.endConversation.mockClear()
   mocks.conversationEnabled.length = 0
+  mocks.liveEnabled.length = 0
+  mocks.submit.mockClear()
+  $voiceLiveStatus.set(null)
   markActiveComposer('main')
 })
 
 describe('composer voice shortcuts', () => {
+  it.each(['codex-live', 'gpt-live'] as const)('starts %s through the same native Hermes task path', async mode => {
+    $voiceLiveStatus.set({ mode, available: true, reason: null, voice: 'marin', model: 'live' })
+    renderComposers(mountComposer('main', false))
+    markActiveComposer('main')
+    await act(async () => {
+      requestVoiceToggle('active')
+      await new Promise(resolve => window.setTimeout(resolve, 0))
+    })
+    expect(mocks.liveEnabled).toContain(true)
+    expect(mocks.conversationEnabled).not.toContain(true)
+    await act(async () => mocks.liveSubmit!('Run tests', 'User: Run tests'))
+    expect(mocks.submit).toHaveBeenCalledWith('Run tests', { surface: 'voice-live', voiceContext: 'User: Run tests' })
+  })
+
   it('dictates only on the active visible target and ignores a disabled target', async () => {
     renderComposers(
       <>

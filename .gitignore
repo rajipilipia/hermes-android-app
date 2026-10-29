@@ -97,6 +97,7 @@ tmp/
 # Machine-local IDE and OS files
 local.properties
 .idea/
+*.iml
 .vscode/
 .DS_Store
 Thumbs.db

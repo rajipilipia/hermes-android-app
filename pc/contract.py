@@ -107,7 +107,10 @@ def build(upstream):
                    'apps/desktop/src/app/session/hooks/use-prompt-actions/index.ts',
                    'apps/desktop/src/app/session/hooks/use-prompt-actions/submit.ts',
                    'apps/desktop/src/app/chat/composer/hooks/use-mic-recorder.ts',
-                   'apps/desktop/src/lib/voice-client-direct.ts', 'apps/desktop/src/lib/voice-playback.ts'):
+                   'apps/desktop/src/lib/voice-client-direct.ts', 'apps/desktop/src/lib/voice-playback.ts',
+                   # Added for 925ede7: Live voice request shapes, session mutation identity.
+                   'apps/desktop/src/lib/voice-live.ts', 'tools/voice_live.py', 'tools/voice_live_debug.py',
+                   'apps/desktop/src/api/sessions.ts', 'apps/shared/src/session-http-mutations.ts'):
         files[source] = hashlib.sha256((root / source).read_bytes()).hexdigest()
     if files['tui_gateway/methods_onboarding.py'] != ONBOARDING_SHA256:
         raise ValueError('onboarding source hash mismatch')

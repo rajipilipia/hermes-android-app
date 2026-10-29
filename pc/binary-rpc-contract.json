@@ -1,5 +1,5 @@
 {
-  "sourceCommit": "93ac19694ea0c4cc1e1661ff37c2a171d96a1bc0",
+  "sourceCommit": "925ede7741ffbbde27b50ce6b1903465302e2576",
   "schemaVersion": 1,
   "transport": "authenticated original /api/ws JSON-RPC",
   "requestSchemas": {

@@ -15,6 +15,12 @@ cp=os.pathsep.join([str(out),str(json)])
 sources=([core,origin,api,probe,core.parent/'NativeWork.java'] if core.exists() else [])+([encrypted] if encrypted.exists() else [])+[r/'tests'/name for name in ['NativeAuthHostTest.java','NativePersistenceHostTest.java','EncryptedRefreshStoreHostTest.java','ServerOriginHostTest.java','NativeApiHostTest.java','ServerProbeHostTest.java','NativeWorkHostTest.java']]
 tests=['NativePersistenceHostTest'] if '--persistent-only' in sys.argv else ['EncryptedRefreshStoreHostTest'] if '--crypto-only' in sys.argv else ['NativeAuthHostTest','NativePersistenceHostTest','EncryptedRefreshStoreHostTest','ServerOriginHostTest','NativeApiHostTest','ServerProbeHostTest','NativeWorkHostTest']
 args={'EncryptedRefreshStoreHostTest':[out/'encrypted-fixture'],'NativeApiHostTest':[r/'android/assets/capability-contract.json']}
+sources.extend([core.parent/'OfflinePreview.java',core.parent/'NativeHostPolicy.java',r/'tests/OfflinePreviewHostTest.java'])
+# Dev-phone file log: redaction and rotation (no Android API in that path).
+sources.extend([core.parent/'FileLog.java',r/'tests/FileLogHostTest.java'])
+# Codex Live call: microphone service demand (pure logic, no Android API).
+sources.extend([core.parent/'NativeVoiceCall.java',r/'tests/NativeVoiceCallHostTest.java'])
+if len(sys.argv)==1:tests+=['us.pilipia.hermes.prototype.OfflinePreviewHostTest','FileLogHostTest','NativeVoiceCallHostTest']
 # Parse every native source first: host tests stub some classes, so only this sees their syntax.
 syntax=[[j/'java.exe',r/'tests/JavaSyntaxCheck.java',r/'android/src']]
 for cmd in [*syntax,[j/'javac.exe','--release','8','-cp',json,'-d',out,*sources],*[[j/'java.exe','-cp',cp,test,*args.get(test,[])] for test in tests]]:

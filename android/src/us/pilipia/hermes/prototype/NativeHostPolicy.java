@@ -90,6 +90,12 @@ public final class NativeHostPolicy {
    return !(host.equals(server.getHost().toLowerCase(Locale.ROOT))&&port==serverPort&&"https".equals(scheme));
   }catch(URISyntaxException|NumberFormatException e){return false;}
  }
+ /** Embedded Google account flows need an explicit user-operated system-browser handoff. */
+ public static boolean requiresExternalAuthentication(String value){
+  if(!allowExternal(value))return false;
+  try{URI uri=new URI(value);return "https".equalsIgnoreCase(uri.getScheme())&&"accounts.google.com".equalsIgnoreCase(uri.getHost());}
+  catch(URISyntaxException invalid){return false;}
+ }
  private static boolean origin(URI uri){
   // Exact authority string: the setup or server host, plus its non-default port if it has one.
   return "https".equals(uri.getScheme())&&origin.substring(8).equals(uri.getRawAuthority())&&uri.getUserInfo()==null;

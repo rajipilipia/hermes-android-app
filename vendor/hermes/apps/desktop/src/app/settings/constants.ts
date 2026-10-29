@@ -253,8 +253,8 @@ export const ENUM_OPTIONS: Record<string, string[]> = {
   // tools/transcription_common.py (local_command is auto-detected, not picked).
   'stt.provider': ['local', 'groq', 'openai', 'mistral', 'xai', 'elevenlabs', 'deepinfra'],
   // How the desktop voice conversation is wired — tools/voice_live.py owns the
-  // gpt-live branch (one full-duplex voice model delegating to Hermes).
-  'voice.voice_chat_mode': ['chained', 'gpt-live'],
+  // live branches (one full-duplex voice model delegating to Hermes).
+  'voice.voice_chat_mode': ['chained', 'gpt-live', 'codex-live'],
   'voice.gpt_live.voice': [
     'marin',
     'cedar',
@@ -482,6 +482,9 @@ export const FIELD_LABELS: Record<string, string> = defineFieldCopy({
     maxRecordingSeconds: 'Max Recording Length',
     autoTts: 'Read Responses Aloud',
     voiceChatMode: 'Voice Chat Mode',
+    codexLive: {
+      debug: 'Codex Live Diagnostics'
+    },
     gptLive: {
       voice: 'GPT-Live Voice',
       instructions: 'GPT-Live Persona'
@@ -670,8 +673,11 @@ export const FIELD_DESCRIPTIONS: Record<string, string> = defineFieldCopy({
   },
   voice: {
     autoTts: 'Automatically speak assistant responses.',
+    codexLive: {
+      debug: 'Off by default. Metadata only; no audio, transcripts, or credentials. Applies to the next voice connection.'
+    },
     voiceChatMode:
-      'chained: speech-to-text → Hermes → text-to-speech with the providers below. gpt-live: one full-duplex OpenAI voice model (gpt-live-1) listens and talks, and hands every real request to Hermes — any model you have selected answers with the full toolset. Needs an OpenAI API key; the voice layer bills $0.05 per minute.',
+      'chained: speech-to-text → Hermes → text-to-speech with the providers below. gpt-live: one full-duplex OpenAI voice model (gpt-live-1) listens and talks, and hands every real request to Hermes — any model you have selected answers with the full toolset. Needs an OpenAI API key; the voice layer bills $0.05 per minute. codex-live: full-duplex voice delegating to Hermes using your existing ChatGPT login. Private interface; availability and billing are not guaranteed.',
     gptLive: {
       voice: 'Voice for GPT-Live mode. Custom voice IDs are accepted.',
       instructions:
@@ -712,7 +718,16 @@ export const SECTIONS: DesktopConfigSection[] = [
     id: 'model',
     label: 'Model',
     icon: Box,
-    keys: ['model_context_length', 'fallback_providers']
+    keys: [
+      'model_context_length',
+      'fallback_providers',
+      'delegation.model',
+      'delegation.provider',
+      'delegation.max_iterations',
+      'delegation.max_concurrent_children',
+      'delegation.child_timeout_seconds',
+      'delegation.reasoning_effort'
+    ]
   },
   {
     id: 'chat',
@@ -788,6 +803,7 @@ export const SECTIONS: DesktopConfigSection[] = [
       'voice.voice_chat_mode',
       'voice.gpt_live.voice',
       'voice.gpt_live.instructions',
+      'voice.codex_live.debug',
       'tts.provider',
       'stt.enabled',
       'stt.echo_transcripts',
@@ -855,12 +871,6 @@ export const SECTIONS: DesktopConfigSection[] = [
       'agent.api_max_retries',
       'agent.service_tier',
       'agent.tool_use_enforcement',
-      'delegation.model',
-      'delegation.provider',
-      'delegation.max_iterations',
-      'delegation.max_concurrent_children',
-      'delegation.child_timeout_seconds',
-      'delegation.reasoning_effort',
       'updates.non_interactive_local_changes'
     ]
   }

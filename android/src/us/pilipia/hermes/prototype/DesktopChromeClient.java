@@ -27,6 +27,7 @@ public final class DesktopChromeClient extends WebChromeClient {
   boolean active(); boolean page(); WebView web(); ViewGroup container();
   default String notification(String operation,org.json.JSONObject payload){return "{\"ok\":false}";}
   default boolean work(boolean active){return false;}
+  default boolean call(boolean active){return false;}
  }
  private final Activity activity;
  private final Host host;
@@ -68,6 +69,10 @@ public final class DesktopChromeClient extends WebChromeClient {
     if("hermes.android.work.v1".equals(message)){
      if(envelope.length()==1&&envelope.opt("active") instanceof Boolean)
       reply=host.work(envelope.getBoolean("active"))?"{\"ok\":true}":"{\"ok\":false}";
+    }else if("hermes.android.call.v1".equals(message)){
+     // Codex Live call opened (true) or ended (false): microphone foreground service on or off.
+     if(envelope.length()==1&&envelope.opt("active") instanceof Boolean)
+      reply=host.call(envelope.getBoolean("active"))?"{\"ok\":true}":"{\"ok\":false}";
     }else if("hermes.android.notifications.v1".equals(message)){
      String operation=envelope.getString("operation");
      if(envelope.length()==2&&envelope.has("payload")&&java.util.Arrays.asList("show","cancel","status","request","take").contains(operation))

@@ -5,7 +5,6 @@ import { droppedFileInlineRef } from '@/app/chat/composer/inline-refs'
 import { LARGE_PASTE_TITLE_PREVIEW_CHARS, pasteSizeLabel } from '@/app/chat/composer/large-paste'
 import { formatRefValue } from '@/components/assistant-ui/directive-text'
 import { useI18n } from '@/i18n'
-import { getAndroidMedia } from '@/lib/android-media'
 import { attachmentPathNeedsUpload } from '@/lib/attachment-upload-policy'
 import { attachmentId, contextPath, pathLabel } from '@/lib/chat-runtime'
 import { readDesktopFileDataUrlLocalFirst, selectDesktopPaths } from '@/lib/desktop-fs'
@@ -329,9 +328,7 @@ export interface OsDropStagingContext {
 }
 
 function osDropNeedsStaging(candidate: DroppedFile, staging?: OsDropStagingContext): boolean {
-  // Android selected-file handles are local bytes, never backend paths, even
-  // before a remote connection descriptor has finished publishing.
-  if (!staging || getAndroidMedia()?.isLocalPath(candidate.path)) {
+  if (!staging) {
     return true
   }
 
@@ -835,10 +832,6 @@ export function useComposerActions({
   const removeAttachment = useCallback(
     async (id: string) => {
       const removed = scope.remove(id)
-
-      if (removed?.path) {
-        getAndroidMedia()?.discardLocalPath?.(removed.path)
-      }
 
       if (
         removed?.kind === 'image' &&
