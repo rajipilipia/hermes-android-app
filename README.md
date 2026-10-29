@@ -5,7 +5,7 @@ It is the Hermes Desktop interface adapted for a phone. The agent does not run o
 
 **Experimental debug build. Not an official Nous Research app.**
 
-[Releases](https://github.com/example-userilipia/hermes-android-app/releases) · [Changelog](CHANGELOG.md) · [Known limits](docs/COMPATIBILITY.md) · [Security notes](SECURITY.md) · [Report a bug](https://github.com/example-userilipia/hermes-android-app/issues)
+[Releases](https://github.com/rajipilipia/hermes-android-app/releases) · [Changelog](CHANGELOG.md) · [Known limits](docs/COMPATIBILITY.md) · [Security notes](SECURITY.md) · [Report a bug](https://github.com/rajipilipia/hermes-android-app/issues)
 
 | | | |
 | --- | --- | --- |
@@ -28,7 +28,7 @@ The newest APK on Releases is still **alpha.2**, which is older than this source
 
 ## Install (alpha.2 APK)
 
-1. Download the APK and `SHA256SUMS` from [Releases](https://github.com/example-userilipia/hermes-android-app/releases).
+1. Download the APK and `SHA256SUMS` from [Releases](https://github.com/rajipilipia/hermes-android-app/releases).
 2. Verify the checksum: `sha256sum -c SHA256SUMS` (Windows: `certutil -hashfile <apk> SHA256`).
 3. Sideload the APK. Updates keep your data only when the signing key matches the one you installed before.
 4. Open the app, enter your gateway base URL (no path, for example `https://example.com`) and sign in through your server's browser flow. Keep the app in the foreground until sign-in finishes.
@@ -60,5 +60,5 @@ noVNC (MPL-2.0) and bundled fonts (OFL) keep their own licenses.
 
 ## Report a bug
 
-Open an [issue](https://github.com/example-userilipia/hermes-android-app/issues) with the release, phone model, Android version and short steps.
+Open an [issue](https://github.com/rajipilipia/hermes-android-app/issues) with the release, phone model, Android version and short steps.
 Do not include secrets, chat text, your server address or account details.
