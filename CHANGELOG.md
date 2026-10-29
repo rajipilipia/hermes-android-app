@@ -2,7 +2,7 @@
 
 Debug builds only. All dates are 2026.
 
-## 0.3.1 - 29 Oct (source only, no new APK on Releases)
+## 0.3.1 - 29 Oct (debug APK: pre-release v0.3.1-alpha.1)
 
 - Hermes Desktop source updated to v0.22.5 (`925ede7`). It stays byte-exact in `vendor/`; phone changes are build-time adapters.
 - Codex Live voice calls: a foreground service keeps the call alive, and you can end it from the notification. A bug that ended a call when the first message renamed a "+" tab is fixed (checked with a test and a phone probe). Needs a server with Codex Live support.

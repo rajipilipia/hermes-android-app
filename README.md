@@ -18,7 +18,7 @@ Emulator screenshots with demo data.
 
 Hermes Desktop v0.22.5 source, Codex Live voice calls, working "+" tabs, a native phone keyboard in the composer, and layout fixes. Details in the [changelog](CHANGELOG.md).
 
-The newest APK on Releases is still **alpha.2**, which is older than this source. To get 0.3.1, build it from source.
+The newest APK on [Releases](https://github.com/rajipilipia/hermes-android-app/releases) is the pre-release **v0.3.1-alpha.1** (debug), built from this source. You can also build it yourself.
 
 ## Requirements
 
@@ -26,7 +26,7 @@ The newest APK on Releases is still **alpha.2**, which is older than this source
 - Android 8 or later with a current Android System WebView. Checked on Android 17.
 - For Codex Live voice calls: a server with Codex Live support. This is tested only on the author's patched server, not on stock Hermes.
 
-## Install (alpha.2 APK)
+## Install (APK)
 
 1. Download the APK and `SHA256SUMS` from [Releases](https://github.com/rajipilipia/hermes-android-app/releases).
 2. Verify the checksum: `sha256sum -c SHA256SUMS` (Windows: `certutil -hashfile <apk> SHA256`).
